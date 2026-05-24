@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import math
+from scipy.stats import rankdata
 
 # ================= 1. 全局配置与UI优化 =================
 st.set_page_config(page_title="FX2 量化对冲终端", layout="wide", page_icon="🏦")
@@ -64,18 +65,24 @@ def dixon_coles_full_matrix(lambda_, mu_, rho_):
     P[1, 1] *= (1 - rho_)
     P = np.clip(P, 0, 1)
     P = P / P.sum() 
-    p_hw2 = np.sum(np.tril(P, -2))
-    p_hw1 = np.sum(np.diag(P, -1))
-    p_draw = np.sum(np.diag(P, 0))
-    p_au = np.sum(np.triu(P, 0))
+    
     P_col = np.zeros((8, 8))
     P_col[:7, :7] = P[:7, :7]
     P_col[7, :7] = np.sum(P[7:, :7], axis=0) 
     P_col[:7, 7] = np.sum(P[:7, 7:], axis=1) 
     P_col[7, 7] = np.sum(P[7:, 7:])          
+    
+    # 核心：必须提前四舍五入到4位，完美对齐 Excel 的 SUMPRODUCT 底层计算
+    P_col_rounded = np.round(P_col, 4)
+    
+    p_hw2 = np.sum(np.tril(P_col_rounded, -2))
+    p_hw1 = np.sum(np.diag(P_col_rounded, -1))
+    p_draw = np.sum(np.diag(P_col_rounded, 0))
+    p_au = np.sum(np.triu(P_col_rounded, 0))
+    
     cols = [f"客进{i}" for i in range(7)] + ["客进7+"]
     idx = [f"主进{i}" for i in range(7)] + ["主进7+"]
-    return pd.DataFrame(P_col, columns=cols, index=idx), p_hw2, p_hw1, p_draw, p_au
+    return pd.DataFrame(P_col_rounded, columns=cols, index=idx), p_hw2, p_hw1, p_draw, p_au, P_col_rounded
 
 # ================= 3. 动态多阶阈值控制台 =================
 st.sidebar.title("🧭 动态参数控制台")
@@ -125,13 +132,11 @@ if active_module == "⚔️ 模块一：欧亚大盘体系 (包揽浅中深)":
             prob_d = np.concatenate([biao_d, rang_d])
             delta = np.round(prob_d - prob_c, 4)
             
-            # 返还率折算理论赔率
             ret_c = round(1.0 / np.nansum(1.0 / c_odds[0:3]), 4) if not np.isnan(c_odds[0:3]).any() else 1.0
             ret_d = round(1.0 / np.nansum(1.0 / d_odds[0:3]), 4) if not np.isnan(d_odds[0:3]).any() else 1.0
             theo_odds = np.round(c_odds * (ret_d / ret_c), 4) if ret_c != 0 else c_odds
             dev = np.round(d_odds - theo_odds, 4)
             
-            # G列：七阶热度测算仪
             heat = np.where(delta >= z2, "🌋 极限防范 (变盘红线)",
                    np.where(delta >= z3, "🔥 显著设防 (主力风控)",
                    np.where(delta >= z4, "📈 资金温和流入",
@@ -139,13 +144,11 @@ if active_module == "⚔️ 模块一：欧亚大盘体系 (包揽浅中深)":
                    np.where(delta <= -z3, "📉 显著看衰 (机构放弃)", 
                    np.where(delta <= -z4, "↘️ 资金温和流出", "⚪ 随机噪音 (散户买卖)"))))))
                    
-            # Q列：终极滤镜
             filter_q = np.where(dev < -0.02, "🩸 真实暴击防范 (剥削极狠)",
                        np.where(dev < 0, "📉 真实降水",
                        np.where((dev > 0) & (d_odds < c_odds), "🚨 虚假降水 (诱导陷阱！)",
                        np.where(dev > 0, "📈 真实升水抛弃", "⚪ 平稳"))))
             
-            # S & U列：时空双盲底座映射 (仅主队标胜进行核心测算)
             s_theo, u_theo = np.full(6, np.nan), np.full(6, np.nan)
             t_open, v_open, w_traj, aa_hedge = ["⚪ 无对照"]*6, ["⚪ 无对照"]*6, ["⚪ 无对照"]*6, ["⚪ 动量未达标"]*6
             
@@ -153,18 +156,15 @@ if active_module == "⚔️ 模块一：欧亚大盘体系 (包揽浅中深)":
                 s_theo[0] = round(prob_c[3] + prob_c[4], 4) if h_val < 0 else round(prob_c[3] - prob_c[1], 4)
                 u_theo[0] = round(prob_d[3] + prob_d[4], 4) if h_val < 0 else round(prob_d[3] - prob_d[1], 4)
                 
-                # 初/临盘定性
                 for i, (c_prob, s_t, d_prob, u_t) in enumerate(zip([prob_c[0]], [s_theo[0]], [prob_d[0]], [u_theo[0]])):
                     diff_c = c_prob - s_t
                     t_open[0] = "🔻 极限低开" if diff_c >= z2 else "📉 显著低开" if diff_c >= z3 else "🔺 极限高开" if diff_c <= -z2 else "📈 显著高开" if diff_c <= -z3 else "⚪ 体系平衡"
                     diff_d = d_prob - u_t
                     v_open[0] = "🔻 极限低开" if diff_d >= z2 else "📉 显著低开" if diff_d >= z3 else "🔺 极限高开" if diff_d <= -z2 else "📈 显著高开" if diff_d <= -z3 else "⚪ 体系平衡"
                     
-                    # 轨迹研判
                     traj = (d_prob - u_t) - (c_prob - s_t)
                     w_traj[0] = "🚨 临场剧烈砸盘" if traj >= 0.02 else "📉 步步紧逼" if traj >= 0.01 else "🚨 疯狂拉高赔率" if traj <= -0.02 else "📈 门槛放宽" if traj <= -0.01 else "⚪ 伪装平稳"
                     
-                    # 时空双杀
                     struct = round(d_prob - u_t, 4)
                     if delta[0] >= z3:
                         aa_hedge[0] = "✅ 黄金共振 (时空双杀闭眼上)" if struct >= z4 else "🚨 致命背离 (动量大热结构虚高!)" if struct <= -z4 else "🟡 结构中立"
@@ -182,8 +182,7 @@ if active_module == "⚔️ 模块一：欧亚大盘体系 (包揽浅中深)":
             st.markdown("### 📊 第一阶段：欧亚基础底座透视")
             st.dataframe(safe_style(out_main, ['七阶热度测算仪', '相对返还率滤镜', '初盘开盘定性', '🎯 操盘轨迹研判', '⚔️ 时空双杀验证']), hide_index=True, use_container_width=True)
 
-            # ================= 顺流资金共识提纯器 (无 scipy 依赖版) =================
-            # 使用 pandas 内置的 rank 方法，100% 免疫环境报错
+            # ================= 顺流资金共识提纯器 =================
             ranks = pd.Series(delta).rank(method='min', ascending=False).values 
             
             refiner_text = []
@@ -322,49 +321,76 @@ elif active_module == "⚽ 模块二：进球数多维风控 (包揽浅中深)":
     with tab2: render_goals_ui("中水区")
     with tab3: render_goals_ui("深水区")
 
-# ================= 6. 模块三：体彩高阶工具 (严控原表6档EV) =================
+# ================= 6. 模块三：体彩高阶工具 (全局联动版) =================
 elif active_module == "🎫 模块三：高阶工具 (DC矩阵/EV切片)":
     st.header("🎫 高阶价值提纯与转换矩阵")
-    tab1, tab2 = st.tabs(["🧮 DC 进球双泊松矩阵", "✂️ 体彩 EV 价值切片器"])
     
-    with tab1:
-        c1, c2, c3 = st.columns(3)
-        tg = c1.number_input("进球盘 (大小球)", value=2.50, step=0.25)
-        hcp = c2.number_input("让球盘 (主队亚指)", value=-0.50, step=0.25)
-        rho = c3.number_input("DC依赖系数 (ρ)", value=-0.15, step=0.01)
-        
-        xg_h, xg_a = (tg - hcp) / 2, (tg + hcp) / 2
+    st.markdown("### ⚙️ 全局 DC 双泊松底座参数")
+    st.caption("注：在此处填写的进球数与亚指参数，将同时驱动下方【DC矩阵】与【体彩EV切片器】的概率推演。")
+    c1, c2, c3 = st.columns(3)
+    tg = c1.number_input("进球盘 (大小球)", value=2.75, step=0.25, key="dc_tg")
+    hcp = c2.number_input("让球盘 (主队亚指)", value=0.0, step=0.25, key="dc_hcp")
+    rho = c3.number_input("DC依赖系数 (ρ)", value=-0.15, step=0.01, key="dc_rho")
+    
+    xg_h, xg_a = (tg - hcp) / 2, (tg + hcp) / 2
+    
+    if xg_h < 0 or xg_a < 0:
+        st.error("⚠️ 预期进球为负，检查盘口是否填反！")
+    else:
         st.markdown(f"**主队预期进球 (xG):** `{xg_h:.4f}` &nbsp;|&nbsp; **客队预期进球 (xG):** `{xg_a:.4f}`")
+        df_m, ph2, ph1, pdr, pau, P_col_rounded = dixon_coles_full_matrix(xg_h, xg_a, rho)
         
-        if xg_h < 0 or xg_a < 0: st.error("⚠️ 预期进球为负，检查盘口")
-        else:
-            df_m, ph2, ph1, pdr, pau = dixon_coles_full_matrix(xg_h, xg_a, rho)
+        tab1, tab2 = st.tabs(["🧮 DC 进球双泊松矩阵", "✂️ 体彩 EV 价值切片器 (联动底座)"])
+        
+        with tab1:
+            st.markdown("### 📊 核心赛果概率提纯")
             rc1, rc2, rc3, rc4 = st.columns(4)
             rc1.metric("DC 大胜概率(赢2+)", f"{ph2:.4f}")
             rc2.metric("DC 恰赢1球", f"{ph1:.4f}")
             rc3.metric("DC 平局概率", f"{pdr:.4f}")
             rc4.metric("DC 客不败", f"{pau:.4f}")
+            st.markdown("### 🥅 DC 双泊松进球落点矩阵 (0-7+)")
             st.dataframe(df_m.style.format("{:.4f}"), use_container_width=True)
 
-    with tab2:
-        st.markdown("### 📥 录入国彩与国际纯净概率")
-        df_in3 = pd.DataFrame({
-            "投注项": ["标准盘-胜", "标准盘-平", "标准盘-负", "让球盘-让胜", "让球盘-让平", "让球盘-让负"],
-            "国彩官方赔率": [2.32, 3.20, 2.60, 5.30, 4.00, 1.45],
-            "国际纯净概率": [0.3547, 0.2917, 0.3536, 0.1691, 0.2227, 0.6081]
-        })
-        edited_3 = st.data_editor(df_in3, hide_index=True, num_rows="fixed", use_container_width=True, key="in3_v9")
-        
-        if st.button("🚀 启动套利扫描"):
-            tc_odds = pd.to_numeric(edited_3['国彩官方赔率'], errors='coerce').values
-            intl_prob = pd.to_numeric(edited_3['国际纯净概率'], errors='coerce').values
-            ev_vals = np.round(tc_odds * intl_prob - 1, 4)
+        with tab2:
+            st.markdown("### 📥 录入国彩官方盘口与让球数")
             
-            judge = np.where(ev_vals > 0, "🌟 绝对正价值 (稳赚套利区)", 
-                    np.where(ev_vals >= -0.03, "🟢 极度高潜 (逼近零损耗，首选)", 
-                    np.where(ev_vals >= -0.08, "🟡 合理磨损 (常规抽水区，可搏)", 
-                    np.where(ev_vals >= -0.12, "📉 劣势赔付 (吃水较深，需动量支持)", 
-                    np.where(ev_vals >= -0.16, "🚨 杀猪盘预警 (极易出冷)", "🩸 抽水深渊 (极度恶劣，坚决规避)")))))
+            df_in3 = pd.DataFrame({
+                "TC盘口": ["标准盘", "让球盘"],
+                "胜": [2.32, 5.30],
+                "平": [3.20, 4.00],
+                "负": [2.60, 1.45],
+                "国彩让球数": [0, -1]
+            })
+            edited_3 = st.data_editor(df_in3, hide_index=True, num_rows="fixed", use_container_width=True, key="in3_v10")
             
-            out_df3 = pd.DataFrame({"投注项": edited_3['投注项'].values, "数学EV": ev_vals, "【交易信号雷达】": judge})
-            st.dataframe(safe_style(out_df3, ['【交易信号雷达】']), hide_index=True, use_container_width=True)
+            if st.button("🚀 启动底座联动套利扫描"):
+                std_odds = pd.to_numeric(edited_3.iloc[0, 1:4], errors='coerce').values
+                let_odds = pd.to_numeric(edited_3.iloc[1, 1:4], errors='coerce').values
+                tc_let = int(edited_3.iloc[1, 4])  # 提取让球盘的让球数
+                
+                # Excel 里的 SUMPRODUCT 完全对齐计算 (精确到4位小数后动态相加)
+                p_std_w = sum(P_col_rounded[i, j] for i in range(8) for j in range(8) if i - j > 0)
+                p_std_d = sum(P_col_rounded[i, j] for i in range(8) for j in range(8) if i - j == 0)
+                p_std_l = sum(P_col_rounded[i, j] for i in range(8) for j in range(8) if i - j < 0)
+                
+                p_let_w = sum(P_col_rounded[i, j] for i in range(8) for j in range(8) if i - j > -tc_let)
+                p_let_d = sum(P_col_rounded[i, j] for i in range(8) for j in range(8) if i - j == -tc_let)
+                p_let_l = sum(P_col_rounded[i, j] for i in range(8) for j in range(8) if i - j < -tc_let)
+                
+                intl_prob = np.array([p_std_w, p_std_d, p_std_l, p_let_w, p_let_d, p_let_l])
+                tc_odds = np.concatenate([std_odds, let_odds])
+                
+                ev_vals = np.round(tc_odds * intl_prob - 1, 4)
+                
+                judge = np.where(ev_vals > 0, "🌟 绝对正价值 (机构漏洞，稳赚套利区)", 
+                        np.where(ev_vals >= -0.03, "🟢 极度高潜 (无限逼近零损耗，暗盘首选)", 
+                        np.where(ev_vals >= -0.08, "🟡 合理磨损 (常规抽水区间，可搏)", 
+                        np.where(ev_vals >= -0.12, "📉 劣势赔付 (吃水较深，需动量支持)", 
+                        np.where(ev_vals >= -0.16, "🚨 杀猪盘预警 (严重亏损区间，极易出冷)", "🩸 抽水深渊 (数学期望极度恶劣，坚决规避)")))))
+                
+                out_names = ["标准胜 EV", "标准平 EV", "标准负 EV", "让球胜 EV", "让球平 EV", "让球负 EV"]
+                out_df3 = pd.DataFrame({"投注项": out_names, "推演纯净概率": np.round(intl_prob, 4), "数学EV": ev_vals, "【交易信号雷达】": judge})
+                
+                st.markdown("### 📊 体彩 EV 套利扫描矩阵")
+                st.dataframe(safe_style(out_df3, ['【交易信号雷达】']), hide_index=True, use_container_width=True)
