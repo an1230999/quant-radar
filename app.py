@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import math
-from scipy.stats import rankdata
 
 # ================= 1. 全局配置与UI优化 =================
 st.set_page_config(page_title="FX2 量化对冲终端", layout="wide", page_icon="🏦")
@@ -108,7 +107,7 @@ if active_module == "⚔️ 模块一：欧亚大盘体系 (包揽浅中深)":
         st.markdown(f"### 📥 {water_level} 数据录入区")
         col_ext1, _ = st.columns(2)
         with col_ext1:
-            h_val = st.number_input(f"主队亚指让球数 (决定底层映射)", value=-1.0, step=0.25, key=f"hcp_v9_{water_level}")
+            h_val = st.number_input(f"主队亚指让球数 (决定底层映射)", value=-1.0, step=0.25, key=f"hcp_v10_{water_level}")
             
         cols_in = ["玩法选项", "初盘", "临场"]
         init_data_1 = [
@@ -116,9 +115,9 @@ if active_module == "⚔️ 模块一：欧亚大盘体系 (包揽浅中深)":
             ["让盘-胜", 5.50, 5.30], ["让盘-平", 4.10, 4.00], ["让盘-负", 1.42, 1.45]
         ]
         df_in = pd.DataFrame(init_data_1, columns=cols_in)
-        edited_1 = st.data_editor(df_in, hide_index=True, num_rows="fixed", use_container_width=True, key=f"in1_v9_{water_level}")
+        edited_1 = st.data_editor(df_in, hide_index=True, num_rows="fixed", use_container_width=True, key=f"in1_v10_{water_level}")
         
-        if st.button(f"🚀 执行 {water_level} 全维精算", type="primary", key=f"btn1_v9_{water_level}"):
+        if st.button(f"🚀 执行 {water_level} 全维精算", type="primary", key=f"btn1_v10_{water_level}"):
             opts = edited_1['玩法选项'].values
             c_odds = pd.to_numeric(edited_1['初盘'], errors='coerce').values
             d_odds = pd.to_numeric(edited_1['临场'], errors='coerce').values
@@ -229,7 +228,7 @@ if active_module == "⚔️ 模块一：欧亚大盘体系 (包揽浅中深)":
     with tab2: render_main_handicap_ui("中水区")
     with tab3: render_main_handicap_ui("深水区")
 
-# ================= 5. 模块二：进球数风控 (完美复原5阶判定) =================
+# ================= 5. 模块二：进球数风控 =================
 elif active_module == "⚽ 模块二：进球数多维风控 (包揽浅中深)":
     st.header("⚽ 进球数与大小球全维透视模块")
     tab1, tab2, tab3 = st.tabs(["🟢 浅水区 (进球数)", "🟡 中水区 (进球数)", "🔴 深水区 (进球数)"])
@@ -238,7 +237,7 @@ elif active_module == "⚽ 模块二：进球数多维风控 (包揽浅中深)":
         st.markdown(f"### 📥 {water_level} 数据录入区")
         col_ext1, _ = st.columns(2)
         with col_ext1:
-            h_val2 = st.number_input(f"主队亚指让球", value=-0.75, step=0.25, key=f"ext_v9_{water_level}")
+            h_val2 = st.number_input(f"主队亚指让球", value=-0.75, step=0.25, key=f"ext_v10_{water_level}")
         
         goals_data = {
             "玩法选项": ["0球", "1球", "2球", "3球", "4球", "5球", "6球", "7+球", "大球", "小球"],
@@ -246,9 +245,9 @@ elif active_module == "⚽ 模块二：进球数多维风控 (包揽浅中深)":
             "T-60(J)": [None]*10, "临场(D)": [15.5, 5.9, 3.8, 3.10, 4.7, 8.50, 16.0, 24.0, 0.50, 1.15]
         }
         df_in2 = pd.DataFrame(goals_data)
-        edited_2 = st.data_editor(df_in2, hide_index=True, num_rows="fixed", use_container_width=True, key=f"in2_v9_{water_level}")
+        edited_2 = st.data_editor(df_in2, hide_index=True, num_rows="fixed", use_container_width=True, key=f"in2_v10_{water_level}")
         
-        if st.button(f"🚀 执行 {water_level} 进球数雷达扫描", type="primary", key=f"btn2_v9_{water_level}"):
+        if st.button(f"🚀 执行 {water_level} 进球数雷达扫描", type="primary", key=f"btn2_v10_{water_level}"):
             opts = edited_2['玩法选项'].values
             c_odds = pd.to_numeric(edited_2['初盘(C)'], errors='coerce').values
             j_odds = pd.to_numeric(edited_2['T-60(J)'], errors='coerce').values
@@ -321,7 +320,7 @@ elif active_module == "⚽ 模块二：进球数多维风控 (包揽浅中深)":
     with tab2: render_goals_ui("中水区")
     with tab3: render_goals_ui("深水区")
 
-# ================= 6. 模块三：体彩高阶工具 (全局联动版) =================
+# ================= 6. 模块三：体彩高阶工具 (联动底座版) =================
 elif active_module == "🎫 模块三：高阶工具 (DC矩阵/EV切片)":
     st.header("🎫 高阶价值提纯与转换矩阵")
     
@@ -367,7 +366,10 @@ elif active_module == "🎫 模块三：高阶工具 (DC矩阵/EV切片)":
             if st.button("🚀 启动底座联动套利扫描"):
                 std_odds = pd.to_numeric(edited_3.iloc[0, 1:4], errors='coerce').values
                 let_odds = pd.to_numeric(edited_3.iloc[1, 1:4], errors='coerce').values
-                tc_let = int(edited_3.iloc[1, 4])  # 提取让球盘的让球数
+                
+                # 严谨转换用户输入的让球数，防止报错
+                try: tc_let = int(float(edited_3.iloc[1, 4]))
+                except: tc_let = -1
                 
                 # Excel 里的 SUMPRODUCT 完全对齐计算 (精确到4位小数后动态相加)
                 p_std_w = sum(P_col_rounded[i, j] for i in range(8) for j in range(8) if i - j > 0)
