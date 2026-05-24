@@ -15,10 +15,10 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-st.title("🏦 FX2 全维量化对冲终端")
+st.title("🏦 FX2 全维量化对冲终端 (纯净极速版)")
 st.markdown("---")
 
-# ================= 2. 终极防弹引擎 (Numpy底层，锁死4位小数) =================
+# ================= 2. 终极防弹引擎 (纯Numpy底层) =================
 def calc_pure_prob_array(arr):
     arr = np.array(arr, dtype=float)
     if np.isnan(arr).any() or (arr == 0).any():
@@ -52,7 +52,6 @@ def dixon_coles_full_matrix(lambda_, mu_, rho_):
     P_col[:7, 7] = np.sum(P[:7, 7:], axis=1) 
     P_col[7, 7] = np.sum(P[7:, 7:])          
     
-    # 核心：必须提前四舍五入到4位，完美对齐原表
     P_col_rounded = np.round(P_col, 4)
     
     p_hw2 = np.sum(np.tril(P_col_rounded, -2))
@@ -64,25 +63,24 @@ def dixon_coles_full_matrix(lambda_, mu_, rho_):
     idx = [f"主进{i}" for i in range(7)] + ["主进7+"]
     return pd.DataFrame(P_col_rounded, columns=cols, index=idx), p_hw2, p_hw1, p_draw, p_au, P_col_rounded
 
-# ================= 3. 各水区专属阈值生成器 =================
+# ================= 3. 动态多阶阈值生成器 (纠正水区映射逻辑) =================
 def get_water_thresholds(water_level, prefix_key):
-    """为不同水区分配预设的阶梯阈值，并生成专属UI面板"""
     with st.expander(f"⚙️ {water_level} 专属风控阈值微调 (点击展开)"):
         cols = st.columns(6)
-        # 根据水区自动预设阶梯容忍度
-        if "浅水区" in water_level:
-            z2_def, z3_def, z4_def, z5_def, z6_def, v_def = 0.0150, 0.0100, 0.0050, 0.0020, 999.0, 0.0030
+        # 修正：浅水区波动大(需高阈值过滤噪音)，深水区极度敏感(需极低阈值捕捉暗流)
+        if "深水区" in water_level:
+            z2_def, z3_def, z4_def, z5_def, z6_def, v_def = 0.0100, 0.0070, 0.0040, 0.0020, 999.0, 0.0020
         elif "中水区" in water_level:
-            z2_def, z3_def, z4_def, z5_def, z6_def, v_def = 0.0200, 0.0130, 0.0090, 0.0050, 999.0, 0.0050
-        else: # 深水区 (容忍度最大)
-            z2_def, z3_def, z4_def, z5_def, z6_def, v_def = 0.0300, 0.0200, 0.0150, 0.0080, 999.0, 0.0080
+            z2_def, z3_def, z4_def, z5_def, z6_def, v_def = 0.0200, 0.0130, 0.0080, 0.0050, 999.0, 0.0050
+        else: # 浅水区
+            z2_def, z3_def, z4_def, z5_def, z6_def, v_def = 0.0300, 0.0200, 0.0120, 0.0080, 999.0, 0.0080
             
-        z2 = cols[0].number_input("极限红线 (Z2)", value=z2_def, format="%.4f", step=0.0010, key=f"z2_{prefix_key}")
-        z3 = cols[1].number_input("显著防线 (Z3)", value=z3_def, format="%.4f", step=0.0010, key=f"z3_{prefix_key}")
-        z4 = cols[2].number_input("警戒防线 (Z4)", value=z4_def, format="%.4f", step=0.0010, key=f"z4_{prefix_key}")
-        z5 = cols[3].number_input("温和波动 (Z5)", value=z5_def, format="%.4f", step=0.0010, key=f"z5_{prefix_key}")
-        z6 = cols[4].number_input("高赔分水岭 (Z6)", value=z6_def, format="%.1f", step=1.0, key=f"z6_{prefix_key}")
-        v_limit = cols[5].number_input("加速度极值", value=v_def, format="%.4f", step=0.0010, key=f"v_{prefix_key}")
+        z2 = cols[0].number_input("Z2 (红线)", value=z2_def, format="%.4f", step=0.0010, key=f"z2_{prefix_key}")
+        z3 = cols[1].number_input("Z3 (显著)", value=z3_def, format="%.4f", step=0.0010, key=f"z3_{prefix_key}")
+        z4 = cols[2].number_input("Z4 (警戒)", value=z4_def, format="%.4f", step=0.0010, key=f"z4_{prefix_key}")
+        z5 = cols[3].number_input("Z5 (温和)", value=z5_def, format="%.4f", step=0.0010, key=f"z5_{prefix_key}")
+        z6 = cols[4].number_input("Z6 (高赔阻盘)", value=z6_def, format="%.1f", step=1.0, key=f"z6_{prefix_key}")
+        v_limit = cols[5].number_input("T-60加速度", value=v_def, format="%.4f", step=0.0010, key=f"v_{prefix_key}")
         
     return z2, z3, z4, z5, z6, v_limit
 
@@ -94,20 +92,18 @@ active_module = st.sidebar.radio("=== 核心风控三大模块 ===", [
     "🎫 模块三：高阶工具 (DC矩阵/EV切片)"
 ])
 
-# ================= 5. 模块一：欧亚大盘体系 =================
+# ================= 5. 模块一：欧亚大盘 (完整修复时空双盲映射) =================
 if active_module == "⚔️ 模块一：欧亚大盘体系 (包揽浅中深)":
     st.header("⚔️ 欧亚大盘体系分析模块")
     tab1, tab2, tab3 = st.tabs(["🟢 浅水区 (标/让)", "🟡 中水区 (标/让)", "🔴 深水区 (标/让)"])
     
     def render_main_handicap_ui(water_level):
-        # 1. 加载专属阈值
         z2, z3, z4, z5, z6, _ = get_water_thresholds(water_level, f"m1_{water_level}")
         
-        # 2. 数据录入区
         st.markdown(f"### 📥 {water_level} 数据录入区")
         col_ext1, _ = st.columns(2)
         with col_ext1:
-            h_val = st.number_input(f"主队亚指让球数 (决定底层映射)", value=-1.0, step=0.25, key=f"hcp_v11_{water_level}")
+            h_val = st.number_input(f"主队亚指让球数 (决定底层映射)", value=-1.0, step=0.25, key=f"hcp_v12_{water_level}")
             
         cols_in = ["玩法选项", "初盘", "临场"]
         init_data_1 = [
@@ -115,9 +111,9 @@ if active_module == "⚔️ 模块一：欧亚大盘体系 (包揽浅中深)":
             ["让盘-胜", 5.50, 5.30], ["让盘-平", 4.10, 4.00], ["让盘-负", 1.42, 1.45]
         ]
         df_in = pd.DataFrame(init_data_1, columns=cols_in)
-        edited_1 = st.data_editor(df_in, hide_index=True, num_rows="fixed", use_container_width=True, key=f"in1_v11_{water_level}")
+        edited_1 = st.data_editor(df_in, hide_index=True, num_rows="fixed", use_container_width=True, key=f"in1_v12_{water_level}")
         
-        if st.button(f"🚀 执行 {water_level} 全维精算", type="primary", key=f"btn1_v11_{water_level}"):
+        if st.button(f"🚀 执行 {water_level} 全维精算", type="primary", key=f"btn1_v12_{water_level}"):
             opts = edited_1['玩法选项'].values
             c_odds = pd.to_numeric(edited_1['初盘'], errors='coerce').values
             d_odds = pd.to_numeric(edited_1['临场'], errors='coerce').values
@@ -148,29 +144,47 @@ if active_module == "⚔️ 模块一：欧亚大盘体系 (包揽浅中深)":
                        np.where((dev > 0) & (d_odds < c_odds), "🚨 虚假降水 (诱导陷阱！)",
                        np.where(dev > 0, "📈 真实升水抛弃", "⚪ 平稳"))))
             
+            # 核心修复：全面补齐 6行的时空双盲映射交叉计算，彻底消除 None
             s_theo, u_theo = np.full(6, np.nan), np.full(6, np.nan)
             t_open, v_open, w_traj, aa_hedge = ["⚪ 无对照"]*6, ["⚪ 无对照"]*6, ["⚪ 无对照"]*6, ["⚪ 动量未达标"]*6
             
             if h_val != 0:
-                s_theo[0] = round(prob_c[3] + prob_c[4], 4) if h_val < 0 else round(prob_c[3] - prob_c[1], 4)
-                u_theo[0] = round(prob_d[3] + prob_d[4], 4) if h_val < 0 else round(prob_d[3] - prob_d[1], 4)
+                if h_val < 0:
+                    s_theo[0], u_theo[0] = prob_c[3] + prob_c[4], prob_d[3] + prob_d[4]
+                    s_theo[1], u_theo[1] = prob_c[5] - prob_c[2], prob_d[5] - prob_d[2]
+                    s_theo[2], u_theo[2] = prob_c[5] - prob_c[1], prob_d[5] - prob_d[1]
+                    s_theo[3], u_theo[3] = prob_c[0] - prob_c[4], prob_d[0] - prob_d[4]
+                    s_theo[4], u_theo[4] = prob_c[0] - prob_c[3], prob_d[0] - prob_d[3]
+                    s_theo[5], u_theo[5] = prob_c[1] + prob_c[2], prob_d[1] + prob_d[2]
+                else:
+                    s_theo[0], u_theo[0] = prob_c[3] - prob_c[1], prob_d[3] - prob_d[1]
+                    s_theo[1], u_theo[1] = prob_c[3] - prob_c[0], prob_d[3] - prob_d[0]
+                    s_theo[2], u_theo[2] = prob_c[4] + prob_c[5], prob_d[4] + prob_d[5]
+                    s_theo[3], u_theo[3] = prob_c[0] + prob_c[1], prob_d[0] + prob_d[1]
+                    s_theo[4], u_theo[4] = prob_c[2] - prob_c[5], prob_d[2] - prob_d[5]
+                    s_theo[5], u_theo[5] = prob_c[2] - prob_c[4], prob_d[2] - prob_d[4]
                 
-                for i, (c_prob, s_t, d_prob, u_t) in enumerate(zip([prob_c[0]], [s_theo[0]], [prob_d[0]], [u_theo[0]])):
-                    diff_c = c_prob - s_t
-                    t_open[0] = "🔻 极限低开" if diff_c >= z2 else "📉 显著低开" if diff_c >= z3 else "🔺 极限高开" if diff_c <= -z2 else "📈 显著高开" if diff_c <= -z3 else "⚪ 体系平衡"
-                    diff_d = d_prob - u_t
-                    v_open[0] = "🔻 极限低开" if diff_d >= z2 else "📉 显著低开" if diff_d >= z3 else "🔺 极限高开" if diff_d <= -z2 else "📈 显著高开" if diff_d <= -z3 else "⚪ 体系平衡"
-                    
-                    traj = (d_prob - u_t) - (c_prob - s_t)
-                    w_traj[0] = "🚨 临场剧烈砸盘" if traj >= 0.02 else "📉 步步紧逼" if traj >= 0.01 else "🚨 疯狂拉高赔率" if traj <= -0.02 else "📈 门槛放宽" if traj <= -0.01 else "⚪ 伪装平稳"
-                    
-                    struct = round(d_prob - u_t, 4)
-                    if delta[0] >= z3:
-                        aa_hedge[0] = "✅ 黄金共振 (时空双杀闭眼上)" if struct >= z4 else "🚨 致命背离 (动量大热结构虚高!)" if struct <= -z4 else "🟡 结构中立"
-                    elif delta[0] <= -z3:
-                        aa_hedge[0] = "🎁 暗度陈仓 (表面退热底层死防)" if struct >= z4 else "🧊 真实抛弃 (时空双杀规避)" if struct <= -z4 else "⚪ 结构中立"
-                    else:
-                        aa_hedge[0] = "🌋 静态死防 (盘口未动底层死防)" if struct >= z3 else "🕸️ 静态诱网 (盘口未动底层虚高)" if struct <= -z3 else "⚪ 动量未达标"
+                s_theo = np.round(s_theo, 4)
+                u_theo = np.round(u_theo, 4)
+                
+                for i in range(6):
+                    c_prob, s_t, d_prob, u_t = prob_c[i], s_theo[i], prob_d[i], u_theo[i]
+                    if not np.isnan(s_t) and not np.isnan(u_t):
+                        diff_c = c_prob - s_t
+                        t_open[i] = "🔻 极限低开" if diff_c >= z2 else "📉 显著低开" if diff_c >= z3 else "🔺 极限高开" if diff_c <= -z2 else "📈 显著高开" if diff_c <= -z3 else "⚪ 体系平衡"
+                        diff_d = d_prob - u_t
+                        v_open[i] = "🔻 极限低开" if diff_d >= z2 else "📉 显著低开" if diff_d >= z3 else "🔺 极限高开" if diff_d <= -z2 else "📈 显著高开" if diff_d <= -z3 else "⚪ 体系平衡"
+                        
+                        traj = (d_prob - u_t) - (c_prob - s_t)
+                        w_traj[i] = "🚨 临场剧烈砸盘" if traj >= 0.02 else "📉 步步紧逼" if traj >= 0.01 else "🚨 疯狂拉高赔率" if traj <= -0.02 else "📈 门槛放宽" if traj <= -0.01 else "⚪ 伪装平稳"
+                        
+                        struct = round(d_prob - u_t, 4)
+                        if delta[i] >= z3:
+                            aa_hedge[i] = "✅ 黄金共振 (时空双杀闭眼上)" if struct >= z4 else "🚨 致命背离 (动量大热结构虚高!)" if struct <= -z4 else "🟡 结构中立"
+                        elif delta[i] <= -z3:
+                            aa_hedge[i] = "🎁 暗度陈仓 (表面退热底层死防)" if struct >= z4 else "🧊 真实抛弃 (时空双杀规避)" if struct <= -z4 else "⚪ 结构中立"
+                        else:
+                            aa_hedge[i] = "🌋 静态死防 (盘口未动底层死防)" if struct >= z3 else "🕸️ 静态诱网 (盘口未动底层虚高)" if struct <= -z3 else "⚪ 动量未达标"
 
             out_main = pd.DataFrame({
                 "玩法选项": opts, "初纯净概率": prob_c, "临纯净概率": prob_d, "真实动量(Delta)": delta,
@@ -178,19 +192,19 @@ if active_module == "⚔️ 模块一：欧亚大盘体系 (包揽浅中深)":
                 "底座理论概率": s_theo, "初盘开盘定性": t_open, "🎯 操盘轨迹研判": w_traj, "⚔️ 时空双杀验证": aa_hedge
             })
             
-            st.markdown("### 📊 第一阶段：欧亚基础底座透视 (无底色纯净版)")
-            # 移除了 safe_style 包装，直接呈现干练的数据表
+            # 使用 fillna 替换所有 NaN，彻底切断显示 None 的问题
+            out_main = out_main.fillna("")
+            
+            st.markdown("### 📊 第一阶段：欧亚基础底座透视 (纯净原色版)")
             st.dataframe(out_main, hide_index=True, use_container_width=True)
 
             # ================= 顺流资金共识提纯器 =================
             ranks = pd.Series(delta).rank(method='min', ascending=False).values 
-            
             refiner_text = []
             for i in range(6):
                 r = ranks[i]
                 d = delta[i]
                 odd = c_odds[i]
-                
                 if r == 1:
                     txt = "🌋 史诗级重防" if d >= z2*1.5 else "🌋 绝对防范极值" if d >= z2 else "🔥 首席主防阵地" if d >= z3 else "🟡 相对领跑" if d >= z4 else "📈 微弱榜首" if d >= z5 else "⚪ 虚空榜首 (假热)"
                 elif d > 0:
@@ -205,7 +219,7 @@ if active_module == "⚔️ 模块一：欧亚大盘体系 (包揽浅中深)":
                 "【顺流资金共识提纯器】": opts, "纯净概率偏移量": delta, "单项资金热度排名": ranks, "终极单项研判": refiner_text
             })
             st.markdown("### 🥇 第二阶段：顺流资金共识提纯器 (自动寻冷)")
-            st.dataframe(out_refiner, hide_index=True, use_container_width=True)
+            st.dataframe(out_refiner.fillna(""), hide_index=True, use_container_width=True)
 
             # ================= 欧亚剪刀差 =================
             st.markdown("### ⚔️ 第三阶段：欧亚剪刀差极值研判")
@@ -235,13 +249,12 @@ elif active_module == "⚽ 模块二：进球数多维风控 (包揽浅中深)":
     tab1, tab2, tab3 = st.tabs(["🟢 浅水区 (进球数)", "🟡 中水区 (进球数)", "🔴 深水区 (进球数)"])
 
     def render_goals_ui(water_level):
-        # 1. 加载专属阈值 (进球数模型包含 v_limit)
         z2, z3, z4, z5, z6, v_limit = get_water_thresholds(water_level, f"m2_{water_level}")
         
         st.markdown(f"### 📥 {water_level} 数据录入区")
         col_ext1, _ = st.columns(2)
         with col_ext1:
-            h_val2 = st.number_input(f"主队亚指让球", value=-0.75, step=0.25, key=f"ext_v11_{water_level}")
+            h_val2 = st.number_input(f"主队亚指让球", value=-0.75, step=0.25, key=f"ext_v12_{water_level}")
         
         goals_data = {
             "玩法选项": ["0球", "1球", "2球", "3球", "4球", "5球", "6球", "7+球", "大球", "小球"],
@@ -249,9 +262,9 @@ elif active_module == "⚽ 模块二：进球数多维风控 (包揽浅中深)":
             "T-60(J)": [None]*10, "临场(D)": [15.5, 5.9, 3.8, 3.10, 4.7, 8.50, 16.0, 24.0, 0.50, 1.15]
         }
         df_in2 = pd.DataFrame(goals_data)
-        edited_2 = st.data_editor(df_in2, hide_index=True, num_rows="fixed", use_container_width=True, key=f"in2_v11_{water_level}")
+        edited_2 = st.data_editor(df_in2, hide_index=True, num_rows="fixed", use_container_width=True, key=f"in2_v12_{water_level}")
         
-        if st.button(f"🚀 执行 {water_level} 进球数雷达扫描", type="primary", key=f"btn2_v11_{water_level}"):
+        if st.button(f"🚀 执行 {water_level} 进球数雷达扫描", type="primary", key=f"btn2_v12_{water_level}"):
             opts = edited_2['玩法选项'].values
             c_odds = pd.to_numeric(edited_2['初盘(C)'], errors='coerce').values
             j_odds = pd.to_numeric(edited_2['T-60(J)'], errors='coerce').values
@@ -300,7 +313,7 @@ elif active_module == "⚽ 模块二：进球数多维风控 (包揽浅中深)":
             })
             
             st.markdown("### 📊 终极进球数扫描雷达 (纯净黑白灰)")
-            st.dataframe(out_df2, hide_index=True, use_container_width=True)
+            st.dataframe(out_df2.fillna(""), hide_index=True, use_container_width=True)
             
             st.markdown("### 📐 静态底座 X 光透视分析")
             if not np.isnan(c_7).all():
@@ -365,7 +378,7 @@ elif active_module == "🎫 模块三：高阶工具 (DC矩阵/EV切片)":
                 "负": [2.60, 1.45],
                 "国彩让球数": [0, -1]
             })
-            edited_3 = st.data_editor(df_in3, hide_index=True, num_rows="fixed", use_container_width=True, key="in3_v11")
+            edited_3 = st.data_editor(df_in3, hide_index=True, num_rows="fixed", use_container_width=True, key="in3_v12")
             
             if st.button("🚀 启动底座联动套利扫描"):
                 std_odds = pd.to_numeric(edited_3.iloc[0, 1:4], errors='coerce').values
