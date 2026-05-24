@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import math
-from scipy.stats import rankdata
 
 # ================= 1. 全局配置与UI优化 =================
 st.set_page_config(page_title="FX2 量化对冲终端", layout="wide", page_icon="🏦")
@@ -183,8 +182,10 @@ if active_module == "⚔️ 模块一：欧亚大盘体系 (包揽浅中深)":
             st.markdown("### 📊 第一阶段：欧亚基础底座透视")
             st.dataframe(safe_style(out_main, ['七阶热度测算仪', '相对返还率滤镜', '初盘开盘定性', '🎯 操盘轨迹研判', '⚔️ 时空双杀验证']), hide_index=True, use_container_width=True)
 
-            # ================= 顺流资金共识提纯器 =================
-            ranks = rankdata(-delta, method='min') # 1 为最大
+            # ================= 顺流资金共识提纯器 (无 scipy 依赖版) =================
+            # 使用 pandas 内置的 rank 方法，100% 免疫环境报错
+            ranks = pd.Series(delta).rank(method='min', ascending=False).values 
+            
             refiner_text = []
             for i in range(6):
                 r = ranks[i]
