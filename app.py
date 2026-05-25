@@ -18,6 +18,11 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+# 强制清空被旧版本污染的错误缓存
+if "FX2_V_FINAL_13" not in st.session_state:
+    st.session_state.clear()
+    st.session_state["FX2_V_FINAL_13"] = True
+
 # ================= 2. 🔐 核心防盗门：访问密码 =================
 def check_password():
     if "password_correct" not in st.session_state:
@@ -29,7 +34,8 @@ def check_password():
         col1, col2, col3 = st.columns([1,1,1])
         with col2:
             if st.button("🚀 解锁终端", use_container_width=True):
-                if pwd == "FX888":  # <--- 在此修改密码
+                # 👇 =========== 【在此修改你的专属密码】 =========== 👇
+                if pwd == "HT888":  
                     st.session_state["password_correct"] = True
                     st.rerun()
                 else:
@@ -40,7 +46,7 @@ def check_password():
 if not check_password():
     st.stop()
 
-st.title("🏦 FX2 全维量化对冲终端 (异构交叉对冲版)")
+st.title("🏦 FX2 全维量化对冲终端 (全模打通·永固版)")
 
 # ================= 3. 核心数学引擎 =================
 def calc_pure_prob_array(arr):
@@ -84,25 +90,34 @@ def dixon_coles_full_matrix(lambda_, mu_, rho_):
     idx = [f"主进{i}" for i in range(7)] + ["主进7+"]
     return pd.DataFrame(P_col_rounded, columns=cols, index=idx), p_hw2, p_hw1, p_draw, p_au, P_col_rounded
 
-# ================= 4. 🌟 终极影子保险箱 =================
-def safe_number_input(label, shadow_key, default_val, format="%.4f", step=0.0010):
-    widget_key = "wid_" + shadow_key
-    if shadow_key not in st.session_state: st.session_state[shadow_key] = default_val
-    if widget_key not in st.session_state: st.session_state[widget_key] = st.session_state[shadow_key]
-    val = st.number_input(label, format=format, step=step, key=widget_key)
-    st.session_state[shadow_key] = val
+# ================= 4. 🌟 纯净双态持久化架构 (拒绝崩溃) =================
+def safe_number_input(label, perm_key, default_val, format="%.4f", step=0.0010):
+    wid_key = "wid_" + perm_key
+    if perm_key not in st.session_state:
+        st.session_state[perm_key] = default_val
+    if wid_key not in st.session_state:
+        st.session_state[wid_key] = st.session_state[perm_key]
+        
+    val = st.number_input(label, format=format, step=step, key=wid_key)
+    st.session_state[perm_key] = val
     return val
 
-def safe_data_editor(shadow_key, default_df):
-    edit_state_key = shadow_key + "_edits"
-    widget_key = "wid_" + shadow_key
-    if edit_state_key in st.session_state and widget_key not in st.session_state:
-        st.session_state[widget_key] = st.session_state[edit_state_key]
-    edited_df = st.data_editor(default_df, hide_index=True, num_rows="fixed", use_container_width=True, key=widget_key)
-    st.session_state[edit_state_key] = st.session_state[widget_key]
+def safe_data_editor(perm_key, default_df):
+    wid_key = "wid_" + perm_key
+    if perm_key not in st.session_state:
+        st.session_state[perm_key] = default_df.copy()
+        
+    edited_df = st.data_editor(
+        st.session_state[perm_key],
+        hide_index=True,
+        num_rows="fixed",
+        use_container_width=True,
+        key=wid_key
+    )
+    st.session_state[perm_key] = edited_df
     return edited_df
 
-# ================= 5. 不可变原初数据表底座 =================
+# ================= 5. 初始化原初白板数据 =================
 init_df_1 = pd.DataFrame([
     ["标盘-胜", 2.45, 2.32], ["标盘-平", 3.20, 3.20], ["标盘-负", 2.45, 2.60],
     ["让盘-胜", 5.50, 5.30], ["让盘-平", 4.10, 4.00], ["让盘-负", 1.42, 1.45]
@@ -120,14 +135,6 @@ init_df_3 = pd.DataFrame({
 })
 
 matches_list = ["⚽ 比赛 1", "⚽ 比赛 2", "⚽ 比赛 3", "⚽ 比赛 4", "⚽ 比赛 5"]
-
-if "FX2_V_FINAL_12" not in st.session_state:
-    st.session_state.clear()
-    for m in matches_list:
-        st.session_state[f"m4_cap_{m}"] = 1000.0
-        st.session_state[f"m4_oddA_{m}"] = 2.00
-        st.session_state[f"m4_oddB_{m}"] = 3.00
-    st.session_state["FX2_V_FINAL_12"] = True
 
 def get_thresholds_defaults(wl):
     if "深水区" in wl: return [0.0100, 0.0070, 0.0040, 0.0020, 999.0, 0.0020]
@@ -186,7 +193,8 @@ if active_module == "⚔️ 模块一：欧亚大盘体系":
             
             ret_c = round(1.0 / np.nansum(1.0 / c_odds[0:3]), 4) if not np.isnan(c_odds[0:3]).any() else 1.0
             ret_d = round(1.0 / np.nansum(1.0 / d_odds[0:3]), 4) if not np.isnan(d_odds[0:3]).any() else 1.0
-            dev = np.round(d_odds - (c_odds * (ret_d / ret_c)), 4)
+            theo_odds = np.round(c_odds * (ret_d / ret_c), 4) if ret_c != 0 else c_odds
+            dev = np.round(d_odds - theo_odds, 4)
             
             heat = np.where(delta >= z2, "🌋 极限防范", np.where(delta >= z3, "🔥 显著设防", np.where(delta >= z4, "📈 温和流入",
                    np.where(delta <= -z2, "🧊 极限抛弃", np.where(delta <= -z3, "📉 显著看衰", np.where(delta <= -z4, "↘️ 温和流出", "⚪ 随机噪音"))))))
@@ -355,7 +363,7 @@ elif active_module == "🎫 模块三：高阶工具 (DC矩阵)":
                 out_df3 = pd.DataFrame({"投注项": ["标准胜", "标准平", "标准负", "让球胜", "让球平", "让球负"], "推演概率": np.round(intl_prob, 4), "数学EV": ev_vals, "雷达定性": judge})
                 st.dataframe(out_df3.fillna(""), hide_index=True, use_container_width=True)
 
-# ================= 10. 🌟全新：模块四：异构交叉与零和对冲 =================
+# ================= 10. 模块四：异构交叉与零和对冲 =================
 elif active_module == "🧬 模块四：异构交叉与零和对冲":
     st.header(f"🧬 {current_match} - 终极异构验证与对冲引擎")
     
@@ -364,8 +372,6 @@ elif active_module == "🧬 模块四：异构交叉与零和对冲":
     with tab_a:
         st.markdown("### 🔍 异构交叉验证：盘口物理边界 vs 泊松数学期望")
         st.info("原理：自动提取【模块一：浅水区】的让球盘，与【模块三】算出的泊松预期净胜球进行撕裂度对比。如果让球盘远超数学期望，即为极致诱导或深水设伏！")
-        
-        # 尝试跨模块提取数据
         try:
             ah_val = st.session_state[f"m1_hcp_{current_match}_浅水区"]
             tg_val = st.session_state.get(f"m3_tg_{current_match}", 2.75)
@@ -376,23 +382,18 @@ elif active_module == "🧬 模块四：异构交叉与零和对冲":
             c1, c2, c3 = st.columns(3)
             c1.metric("机构物理开盘 (主队让球)", f"{ah_val}")
             c2.metric("泊松数学推演 (主队净胜球)", f"{xg_diff}")
-            
-            mismatch = round(xg_diff - (-ah_val), 4) # ah_val是负数代表让球
+            mismatch = round(xg_diff - (-ah_val), 4)
             c3.metric("🌪️ 时空撕裂度 (Mismatch)", f"{mismatch}")
             
-            if mismatch >= 0.4:
-                st.success("✅ **主队深度价值 (Deep Value)：** 机构开出的盘口极其保守，但数学期望显示主队碾压，主队极大概率穿盘！")
-            elif mismatch <= -0.4:
-                st.error("🚨 **极致诱杀陷阱 (Bull Trap)：** 机构强行开出深盘造热主队，但数学期望极低，坚决去下盘/客队不败！")
-            else:
-                st.warning("⚖️ **盘理平衡：** 机构开盘与数学期望严丝合缝，没有明显的结构性漏洞，需依靠模块一的资金动量决断。")
+            if mismatch >= 0.4: st.success("✅ **主队深度价值：** 机构开出的盘口极其保守，但数学期望显示主队碾压，主队极大概率穿盘！")
+            elif mismatch <= -0.4: st.error("🚨 **极致诱杀陷阱：** 机构强行开出深盘造热主队，但数学期望极低，坚决去下盘/客队不败！")
+            else: st.warning("⚖️ **盘理平衡：** 机构开盘与数学期望严丝合缝，没有明显的结构性漏洞。")
         except KeyError:
             st.error("⚠️ 请先在【模块一：浅水区】和【模块三】中输入盘口数据。")
 
     with tab_b:
         st.markdown("### 🏦 机构真实赔付敞口与暗水探测")
-        st.info("原理：通过临场赔率反算机构的资金盈亏平衡点。如果某一项赔率极高，但它的【赔付敞口指数】却异常大，说明机构在悄悄吸收冷门重注！")
-        
+        st.info("原理：通过临场赔率反算机构的资金盈亏平衡点。如果某一项赔付敞口指数异常大，说明机构在悄悄吸收冷门重注！")
         try:
             df_m1 = st.session_state[f"m1_df_{current_match}_浅水区"]
             d_odds = pd.to_numeric(df_m1['临场'][0:3], errors='coerce').values
@@ -401,16 +402,9 @@ elif active_module == "🧬 模块四：异构交叉与零和对冲":
             implied = 1.0 / d_odds
             margin = np.sum(implied) - 1
             fair_prob = implied / (1 + margin)
-            liability = fair_prob * d_odds # 简化的敞口指数
+            liability = fair_prob * d_odds
             
-            df_kelly = pd.DataFrame({
-                "赛果": ["主胜", "平局", "客胜"],
-                "临场赔率": d_odds,
-                "被动抽水率": [f"{margin*100:.2f}%"]*3,
-                "真实概率 (剥离抽水)": np.round(fair_prob, 4),
-                "⚠️ 机构赔付敞口指数": np.round(liability, 4)
-            })
-            
+            df_kelly = pd.DataFrame({"赛果": ["主胜", "平局", "客胜"], "临场赔率": d_odds, "被动抽水率": [f"{margin*100:.2f}%"]*3, "真实概率": np.round(fair_prob, 4), "⚠️ 机构敞口指数": np.round(liability, 4)})
             st.dataframe(df_kelly, hide_index=True, use_container_width=True)
             max_idx = np.argmax(liability)
             st.error(f"💣 **暗水警报：** 当前机构对 **【{df_kelly['赛果'][max_idx]}】** 的赔付敞口最为敏感，存在防范动作！")
@@ -419,36 +413,21 @@ elif active_module == "🧬 模块四：异构交叉与零和对冲":
 
     with tab_c:
         st.markdown("### ⚖️ 荷兰式绝对零和对冲器 (Dutching Calculator)")
-        st.info("实战用途：当你通过前面三个模块确定了两个可能的赛果（例如防主胜和防平），在此输入总资金，系统会精准计算筹码分配，确保无论打出哪个结果，你的利润完全一致！")
-        
-        cap_key = f"m4_cap_{current_match}"
-        oddA_key = f"m4_oddA_{current_match}"
-        oddB_key = f"m4_oddB_{current_match}"
-        
         c1, c2, c3 = st.columns(3)
-        with c1: total_capital = safe_number_input("💰 计划投入总资金", cap_key, 1000.0, format="%.0f", step=100.0)
-        with c2: odd_a = safe_number_input("选项 A 赔率 (如主胜)", oddA_key, 2.00, format="%.2f", step=0.01)
-        with c3: odd_b = safe_number_input("选项 B 赔率 (如平局)", oddB_key, 3.00, format="%.2f", step=0.01)
+        with c1: total_capital = safe_number_input("💰 计划投入总资金", f"m4_cap_{current_match}", 1000.0, format="%.0f", step=100.0)
+        with c2: odd_a = safe_number_input("选项 A 赔率", f"m4_oddA_{current_match}", 2.00, format="%.2f", step=0.01)
+        with c3: odd_b = safe_number_input("选项 B 赔率", f"m4_oddB_{current_match}", 3.00, format="%.2f", step=0.01)
         
         if odd_a > 1 and odd_b > 1:
             implied_a, implied_b = 1/odd_a, 1/odd_b
             total_implied = implied_a + implied_b
-            
             stake_a = (implied_a / total_implied) * total_capital
             stake_b = (implied_b / total_implied) * total_capital
-            
-            return_a = stake_a * odd_a
-            return_b = stake_b * odd_b
-            profit = return_a - total_capital
+            profit = (stake_a * odd_a) - total_capital
             
             st.markdown("#### 🎯 终极执行指令：")
             col_r1, col_r2, col_r3 = st.columns(3)
             col_r1.success(f"**买入 选项A：** `{stake_a:.2f}` 元")
             col_r2.success(f"**买入 选项B：** `{stake_b:.2f}` 元")
-            
-            if profit > 0:
-                col_r3.info(f"**绝对保底净利润：** `+{profit:.2f}` 元")
-            else:
-                col_r3.error(f"**不可避免损耗：** `{profit:.2f}` 元 (无法形成无风险套利)")
-        else:
-            st.warning("请确保赔率大于 1.00")
+            if profit > 0: col_r3.info(f"**保底净利润：** `+{profit:.2f}` 元")
+            else: col_r3.error(f"**不可避免损耗：** `{profit:.2f}` 元")
