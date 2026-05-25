@@ -41,7 +41,7 @@ def check_password():
 if not check_password():
     st.stop()
 
-st.title("🏦 FX2 全维量化对冲终端 (5线程并发·加密纯血版)")
+st.title("🏦 FX2 全维量化对冲终端 (5线程并发·加密版)")
 
 # ================= 3. 核心数学引擎 =================
 def calc_pure_prob_array(arr):
@@ -85,42 +85,88 @@ def dixon_coles_full_matrix(lambda_, mu_, rho_):
     idx = [f"主进{i}" for i in range(7)] + ["主进7+"]
     return pd.DataFrame(P_col_rounded, columns=cols, index=idx), p_hw2, p_hw1, p_draw, p_au, P_col_rounded
 
-# ================= 4. 初始化云端保险箱 (绝对原生的数据池) =================
+# ================= 4. 终极影子拦截器 (彻底解决闪退与数据丢失) =================
+def p_number_input(label, curr_key, init_val, format="%.4f", step=0.0010):
+    widget_key = f"wid_{curr_key}"
+    if curr_key not in st.session_state:
+        st.session_state[curr_key] = init_val
+    if widget_key not in st.session_state:
+        st.session_state[widget_key] = st.session_state[curr_key]
+        
+    val = st.number_input(label, format=format, step=step, key=widget_key)
+    st.session_state[curr_key] = val
+    return val
+
+def p_data_editor(curr_key, init_df):
+    base_key = f"base_{curr_key}"
+    widget_key = f"wid_{curr_key}"
+    
+    if curr_key not in st.session_state:
+        st.session_state[curr_key] = init_df.copy()
+    if widget_key not in st.session_state:
+        st.session_state[base_key] = st.session_state[curr_key].copy()
+        
+    edited_df = st.data_editor(
+        st.session_state[base_key], 
+        hide_index=True, 
+        num_rows="fixed", 
+        use_container_width=True, 
+        key=widget_key
+    )
+    st.session_state[curr_key] = edited_df
+    return edited_df
+
+# ================= 5. 初始化默认数据结构 =================
+init_df_1 = pd.DataFrame([
+    ["标盘-胜", 2.45, 2.32], ["标盘-平", 3.20, 3.20], ["标盘-负", 2.45, 2.60],
+    ["让盘-胜", 5.50, 5.30], ["让盘-平", 4.10, 4.00], ["让盘-负", 1.42, 1.45]
+], columns=["玩法选项", "初盘", "临场"])
+
+init_df_2 = pd.DataFrame({
+    "玩法选项": ["0球", "1球", "2球", "3球", "4球", "5球", "6球", "7+球", "大球", "小球"],
+    "初盘(C)": [15.0, 5.5, 3.6, 3.45, 4.9, 8.25, 15.0, 22.0, 0.65, 1.75],
+    "T-60(J)": [None]*10, "临场(D)": [15.5, 5.9, 3.8, 3.10, 4.7, 8.50, 16.0, 24.0, 0.50, 1.15]
+})
+
+init_df_3 = pd.DataFrame({
+    "TC盘口": ["标准盘", "让球盘"], "胜": [2.32, 5.30], "平": [3.20, 4.00],
+    "负": [2.60, 1.45], "国彩让球数": [0, -1]
+})
+
 matches_list = ["⚽ 比赛 1", "⚽ 比赛 2", "⚽ 比赛 3", "⚽ 比赛 4", "⚽ 比赛 5"]
-water_levels = ["浅水区", "中水区", "深水区"]
+
+def get_thresholds_defaults(wl):
+    if "深水区" in wl: return [0.0100, 0.0070, 0.0040, 0.0020, 999.0, 0.0020]
+    elif "中水区" in wl: return [0.0200, 0.0130, 0.0080, 0.0050, 999.0, 0.0050]
+    else: return [0.0300, 0.0200, 0.0120, 0.0080, 999.0, 0.0080]
+
+def render_thresholds(mod, match, wl):
+    defs = get_thresholds_defaults(wl)
+    with st.expander(f"⚙️ {wl} 专属风控阈值微调 (点击展开)"):
+        cols = st.columns(6)
+        with cols[0]: z2 = p_number_input("Z2 (红线)", f"{mod}_z2_{match}_{wl}", defs[0])
+        with cols[1]: z3 = p_number_input("Z3 (显著)", f"{mod}_z3_{match}_{wl}", defs[1])
+        with cols[2]: z4 = p_number_input("Z4 (警戒)", f"{mod}_z4_{match}_{wl}", defs[2])
+        with cols[3]: z5 = p_number_input("Z5 (温和)", f"{mod}_z5_{match}_{wl}", defs[3])
+        with cols[4]: z6 = p_number_input("Z6 (高赔)", f"{mod}_z6_{match}_{wl}", defs[4], format="%.1f", step=1.0)
+        with cols[5]: v  = p_number_input("T-60加速", f"{mod}_v_{match}_{wl}", defs[5])
+    return z2, z3, z4, z5, z6, v
 
 def init_session_state():
-    if "FX2_V_FINAL_7" not in st.session_state:
-        init_data_1 = [
-            ["标盘-胜", 2.45, 2.32], ["标盘-平", 3.20, 3.20], ["标盘-负", 2.45, 2.60],
-            ["让盘-胜", 5.50, 5.30], ["让盘-平", 4.10, 4.00], ["让盘-负", 1.42, 1.45]
-        ]
-        init_data_2 = {
-            "玩法选项": ["0球", "1球", "2球", "3球", "4球", "5球", "6球", "7+球", "大球", "小球"],
-            "初盘(C)": [15.0, 5.5, 3.6, 3.45, 4.9, 8.25, 15.0, 22.0, 0.65, 1.75],
-            "T-60(J)": [None]*10, "临场(D)": [15.5, 5.9, 3.8, 3.10, 4.7, 8.50, 16.0, 24.0, 0.50, 1.15]
-        }
-        init_data_3 = {
-            "TC盘口": ["标准盘", "让球盘"], "胜": [2.32, 5.30], "平": [3.20, 4.00],
-            "负": [2.60, 1.45], "国彩让球数": [0, -1]
-        }
-        
+    if "FX2_V_FINAL_6" not in st.session_state:
         for m in matches_list:
             for w in water_levels:
-                st.session_state[f"m1_df_{m}_{w}"] = pd.DataFrame(init_data_1, columns=["玩法选项", "初盘", "临场"])
+                st.session_state[f"m1_df_{m}_{w}"] = init_df_1.copy()
                 st.session_state[f"m1_hcp_{m}_{w}"] = -1.0
                 st.session_state[f"m1_calc_{m}_{w}"] = False  
                 
-                st.session_state[f"m2_df_{m}_{w}"] = pd.DataFrame(init_data_2)
+                st.session_state[f"m2_df_{m}_{w}"] = init_df_2.copy()
                 st.session_state[f"m2_hcp_{m}_{w}"] = -0.75
-                st.session_state[f"m2_ou_{m}_{w}"] = 2.50  
+                st.session_state[f"m2_ou_{m}_{w}"] = 2.50  # 新增大小球盘口初始化
                 st.session_state[f"m2_calc_{m}_{w}"] = False  
                 
                 for mod in ["m1", "m2"]:
-                    if "深水区" in w: defs = [0.0100, 0.0070, 0.0040, 0.0020, 999.0, 0.0020]
-                    elif "中水区" in w: defs = [0.0200, 0.0130, 0.0080, 0.0050, 999.0, 0.0050]
-                    else: defs = [0.0300, 0.0200, 0.0120, 0.0080, 999.0, 0.0080]
-                    
+                    defs = get_thresholds_defaults(w)
                     st.session_state[f"{mod}_z2_{m}_{w}"] = defs[0]
                     st.session_state[f"{mod}_z3_{m}_{w}"] = defs[1]
                     st.session_state[f"{mod}_z4_{m}_{w}"] = defs[2]
@@ -128,17 +174,17 @@ def init_session_state():
                     st.session_state[f"{mod}_z6_{m}_{w}"] = defs[4]
                     st.session_state[f"{mod}_v_{m}_{w}"] = defs[5]
 
-            st.session_state[f"m3_df_{m}"] = pd.DataFrame(init_data_3)
+            st.session_state[f"m3_df_{m}"] = init_df_3.copy()
             st.session_state[f"m3_tg_{m}"] = 2.75
             st.session_state[f"m3_hcp_{m}"] = 0.0
             st.session_state[f"m3_rho_{m}"] = -0.15
             st.session_state[f"m3_calc_{m}"] = False
             
-        st.session_state["FX2_V_FINAL_7"] = True
+        st.session_state["FX2_V_FINAL_6"] = True
 
 init_session_state()
 
-# ================= 5. 赛事导航与侧边栏 =================
+# ================= 6. 赛事导航与侧边栏 =================
 current_match = st.radio("🏆 切换独立比赛流 (每场赛事数据独立封存，永不丢失)：", matches_list, horizontal=True)
 
 st.sidebar.title("🧭 矩阵控制台")
@@ -147,23 +193,6 @@ active_module = st.sidebar.radio("=== 核心风控三大模块 ===", [
     "⚽ 模块二：进球数多维风控 (包揽浅中深)",
     "🎫 模块三：高阶工具 (DC矩阵/EV切片)"
 ])
-
-# ================= 6. 纯血原生阈值生成器 =================
-def render_thresholds(mod, match, wl):
-    with st.expander(f"⚙️ {wl} 专属风控阈值微调 (点击展开)"):
-        cols = st.columns(6)
-        k_pre, k_suf = f"{mod}_", f"_{match}_{wl}"
-        # 直接交由原生 Key 管控，切断一切干预
-        cols[0].number_input("Z2 (红线)", format="%.4f", step=0.0010, key=f"{k_pre}z2{k_suf}")
-        cols[1].number_input("Z3 (显著)", format="%.4f", step=0.0010, key=f"{k_pre}z3{k_suf}")
-        cols[2].number_input("Z4 (警戒)", format="%.4f", step=0.0010, key=f"{k_pre}z4{k_suf}")
-        cols[3].number_input("Z5 (温和)", format="%.4f", step=0.0010, key=f"{k_pre}z5{k_suf}")
-        cols[4].number_input("Z6 (高赔)", format="%.1f", step=1.0, key=f"{k_pre}z6{k_suf}")
-        cols[5].number_input("T-60加速", format="%.4f", step=0.0010, key=f"{k_pre}v{k_suf}")
-        
-    return (st.session_state[f"{k_pre}z2{k_suf}"], st.session_state[f"{k_pre}z3{k_suf}"], 
-            st.session_state[f"{k_pre}z4{k_suf}"], st.session_state[f"{k_pre}z5{k_suf}"], 
-            st.session_state[f"{k_pre}z6{k_suf}"], st.session_state[f"{k_pre}v{k_suf}"])
 
 # ================= 7. 模块一：欧亚大盘 =================
 if active_module == "⚔️ 模块一：欧亚大盘体系 (包揽浅中深)":
@@ -176,20 +205,15 @@ if active_module == "⚔️ 模块一：欧亚大盘体系 (包揽浅中深)":
         st.markdown(f"### 📥 {wl} 数据录入区")
         col_ext1, _ = st.columns(2)
         with col_ext1:
-            st.number_input(f"主队亚指让球数", step=0.25, key=f"m1_hcp_{match_id}_{wl}")
+            h_val = p_number_input(f"主队亚指让球数", f"m1_hcp_{match_id}_{wl}", -1.0, step=0.25)
             
-        df_key = f"m1_df_{match_id}_{wl}"
-        # 纯血版表格绑定
-        st.session_state[df_key] = st.data_editor(st.session_state[df_key], hide_index=True, num_rows="fixed", use_container_width=True, key=f"editor_{df_key}")
+        df_cur = p_data_editor(f"m1_df_{match_id}_{wl}", init_df_1)
         
         calc_key = f"m1_calc_{match_id}_{wl}"
         if st.button(f"🚀 执行 {wl} 全维精算", type="primary", key=f"btn_{calc_key}"):
             st.session_state[calc_key] = True
             
         if st.session_state[calc_key]:
-            df_cur = st.session_state[df_key]
-            h_val = st.session_state[f"m1_hcp_{match_id}_{wl}"]
-            
             opts = df_cur['玩法选项'].values
             c_odds = pd.to_numeric(df_cur['初盘'], errors='coerce').values
             d_odds = pd.to_numeric(df_cur['临场'], errors='coerce').values
@@ -294,22 +318,17 @@ elif active_module == "⚽ 模块二：进球数多维风控 (包揽浅中深)":
         st.markdown(f"### 📥 {wl} 数据录入区")
         col_ext1, col_ext2 = st.columns(2)
         with col_ext1:
-            st.number_input(f"主队亚指让球", step=0.25, key=f"m2_hcp_{match_id}_{wl}")
+            h_val2 = p_number_input(f"主队亚指让球", f"m2_hcp_{match_id}_{wl}", -0.75, step=0.25)
         with col_ext2:
-            st.number_input(f"大小球盘口", step=0.25, key=f"m2_ou_{match_id}_{wl}")
+            ou_val = p_number_input(f"大小球盘口 (记录参考用)", f"m2_ou_{match_id}_{wl}", 2.50, step=0.25)
             
-        df_key = f"m2_df_{match_id}_{wl}"
-        st.session_state[df_key] = st.data_editor(st.session_state[df_key], hide_index=True, num_rows="fixed", use_container_width=True, key=f"editor_{df_key}")
+        df_cur = p_data_editor(f"m2_df_{match_id}_{wl}", init_df_2)
         
         calc_key = f"m2_calc_{match_id}_{wl}"
         if st.button(f"🚀 执行 {wl} 进球雷达扫描", type="primary", key=f"btn_{calc_key}"):
             st.session_state[calc_key] = True
             
         if st.session_state[calc_key]:
-            df_cur = st.session_state[df_key]
-            h_val2 = st.session_state[f"m2_hcp_{match_id}_{wl}"]
-            ou_val = st.session_state[f"m2_ou_{match_id}_{wl}"]
-            
             opts = df_cur['玩法选项'].values
             c_odds = pd.to_numeric(df_cur['初盘(C)'], errors='coerce').values
             j_odds = pd.to_numeric(df_cur['T-60(J)'], errors='coerce').values
@@ -349,11 +368,10 @@ elif active_module == "⚽ 模块二：进球数多维风控 (包揽浅中深)":
                 min_idx = np.nanargmin(c_odds[0:8])
                 match_s = "✅ 亚欧完美共振" if str(opts[min_idx][0]) in core_g else "🚨 严重逻辑背离"
                 
-                c1, c2, c3, c4 = st.columns(4)
+                c1, c2, c3 = st.columns(3)
                 c1.info(f"⚖️ 奇偶结构 -> 偶: {even_prob} | 奇: {odd_prob}")
                 c2.info(f"🎯 亚指核心区 -> {core_g}")
                 c3.info(f"🗺️ 交叉共振 -> {match_s}")
-                c4.info(f"⚽ 大小球盘口 -> {ou_val}")
 
     with tab1: render_goals_ui("浅水区", current_match)
     with tab2: render_goals_ui("中水区", current_match)
@@ -365,13 +383,10 @@ elif active_module == "🎫 模块三：高阶工具 (DC矩阵/EV切片)":
     
     st.markdown("### ⚙️ 全局 DC 双泊松底座参数")
     c1, c2, c3 = st.columns(3)
-    with c1: st.number_input("进球盘 (大小球)", step=0.25, key=f"m3_tg_{current_match}")
-    with c2: st.number_input("让球盘 (主队亚指)", step=0.25, key=f"m3_hcp_{current_match}")
-    with c3: st.number_input("DC依赖系数 (ρ)", step=0.01, key=f"m3_rho_{current_match}")
+    with c1: tg = p_number_input("进球盘 (大小球)", f"m3_tg_{current_match}", 2.75, step=0.25)
+    with c2: hcp = p_number_input("让球盘 (主队亚指)", f"m3_hcp_{current_match}", 0.0, step=0.25)
+    with c3: rho = p_number_input("DC依赖系数 (ρ)", f"m3_rho_{current_match}", -0.15, step=0.01)
     
-    tg = st.session_state[f"m3_tg_{current_match}"]
-    hcp = st.session_state[f"m3_hcp_{current_match}"]
-    rho = st.session_state[f"m3_rho_{current_match}"]
     xg_h, xg_a = (tg - hcp) / 2, (tg + hcp) / 2
     
     if xg_h < 0 or xg_a < 0: st.error("⚠️ 预期进球为负，请检查盘口！")
@@ -389,15 +404,15 @@ elif active_module == "🎫 模块三：高阶工具 (DC矩阵/EV切片)":
 
         with tab2:
             st.markdown("### 📥 录入官方盘口与让球数")
-            df_key = f"m3_df_{current_match}"
-            st.session_state[df_key] = st.data_editor(st.session_state[df_key], hide_index=True, num_rows="fixed", use_container_width=True, key=f"editor_{df_key}")
+            df_cur = p_data_editor(f"m3_df_{current_match}", init_df_3)
             
             calc_key = f"m3_calc_{current_match}"
+            if calc_key not in st.session_state: st.session_state[calc_key] = False
+            
             if st.button("🚀 启动底座联动扫描", key=f"btn_{calc_key}"):
                 st.session_state[calc_key] = True
                 
             if st.session_state[calc_key]:
-                df_cur = st.session_state[df_key]
                 std_odds = pd.to_numeric(df_cur.iloc[0, 1:4], errors='coerce').values
                 let_odds = pd.to_numeric(df_cur.iloc[1, 1:4], errors='coerce').values
                 try: tc_let = int(float(df_cur.iloc[1, 4]))
