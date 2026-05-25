@@ -18,9 +18,36 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-st.title("🏦 FX2 全维量化对冲终端 (5线程高并发·永不丢失版)")
+# ================= 2. 🔐 核心防盗门：访问密码拦截器 =================
+def check_password():
+    """验证密码是否正确，如果不正确则阻断后续所有代码执行"""
+    if "password_correct" not in st.session_state:
+        st.session_state["password_correct"] = False
 
-# ================= 2. 核心数学引擎 =================
+    if not st.session_state["password_correct"]:
+        st.markdown("<h2 style='text-align: center; margin-top: 100px;'>🔒 FX2 全维量化终端 - 访问受限</h2>", unsafe_allow_html=True)
+        pwd = st.text_input("请输入访问密钥：", type="password", key="pwd_input")
+        col1, col2, col3 = st.columns([1,1,1])
+        with col2:
+            if st.button("🚀 解锁终端", use_container_width=True):
+                # 👇 =========== 【在这里修改你的密码】 =========== 👇
+                if pwd == "HT888": 
+                    st.session_state["password_correct"] = True
+                    st.rerun()  # 密码正确，刷新页面放行
+                else:
+                    st.error("❌ 密钥验证失败，请重新输入。")
+        return False
+    return True
+
+# 如果密码错误，强制停止云端服务器继续读取下方代码
+if not check_password():
+    st.stop()
+
+
+# ========================== 🔓 密码验证通过后，才会执行以下所有量化代码 ==========================
+st.title("🏦 FX2 全维量化对冲终端 (5线程并发·加密版)")
+
+# ================= 3. 核心数学引擎 =================
 def calc_pure_prob_array(arr):
     arr = np.array(arr, dtype=float)
     if np.isnan(arr).any() or (arr == 0).any():
@@ -62,9 +89,8 @@ def dixon_coles_full_matrix(lambda_, mu_, rho_):
     idx = [f"主进{i}" for i in range(7)] + ["主进7+"]
     return pd.DataFrame(P_col_rounded, columns=cols, index=idx), p_hw2, p_hw1, p_draw, p_au, P_col_rounded
 
-# ================= 3. 终极影子拦截器 (彻底解决闪退与数据丢失) =================
+# ================= 4. 终极影子拦截器 (彻底解决闪退与数据丢失) =================
 def p_number_input(label, curr_key, init_val, format="%.4f", step=0.0010):
-    """持久化数字输入框：对抗 Streamlit 组件销毁重置机制"""
     widget_key = f"wid_{curr_key}"
     if curr_key not in st.session_state:
         st.session_state[curr_key] = init_val
@@ -76,14 +102,12 @@ def p_number_input(label, curr_key, init_val, format="%.4f", step=0.0010):
     return val
 
 def p_data_editor(curr_key, init_df):
-    """持久化表格编辑器：利用双缓冲机制，输入绝不闪退丢焦"""
     base_key = f"base_{curr_key}"
     widget_key = f"wid_{curr_key}"
     
     if curr_key not in st.session_state:
         st.session_state[curr_key] = init_df.copy()
     if widget_key not in st.session_state:
-        # 只有在组件初次渲染(或从其他Tab切回来)时，才把最新数据烤入底层
         st.session_state[base_key] = st.session_state[curr_key].copy()
         
     edited_df = st.data_editor(
@@ -96,7 +120,7 @@ def p_data_editor(curr_key, init_df):
     st.session_state[curr_key] = edited_df
     return edited_df
 
-# ================= 4. 初始化默认数据结构 =================
+# ================= 5. 初始化默认数据结构 =================
 init_df_1 = pd.DataFrame([
     ["标盘-胜", 2.45, 2.32], ["标盘-平", 3.20, 3.20], ["标盘-负", 2.45, 2.60],
     ["让盘-胜", 5.50, 5.30], ["让盘-平", 4.10, 4.00], ["让盘-负", 1.42, 1.45]
@@ -132,7 +156,7 @@ def render_thresholds(mod, match, wl):
         with cols[5]: v  = p_number_input("T-60加速", f"{mod}_v_{match}_{wl}", defs[5])
     return z2, z3, z4, z5, z6, v
 
-# ================= 5. 赛事导航与侧边栏 =================
+# ================= 6. 赛事导航与侧边栏 =================
 current_match = st.radio("🏆 切换独立比赛流 (每场赛事数据独立封存，永不丢失)：", matches_list, horizontal=True)
 
 st.sidebar.title("🧭 矩阵控制台")
@@ -142,7 +166,7 @@ active_module = st.sidebar.radio("=== 核心风控三大模块 ===", [
     "🎫 模块三：高阶工具 (DC矩阵/EV切片)"
 ])
 
-# ================= 6. 模块一：欧亚大盘 =================
+# ================= 7. 模块一：欧亚大盘 =================
 if active_module == "⚔️ 模块一：欧亚大盘体系 (包揽浅中深)":
     st.header(f"⚔️ {current_match} - 欧亚大盘体系")
     tab1, tab2, tab3 = st.tabs(["🟢 浅水区", "🟡 中水区", "🔴 深水区"])
@@ -155,7 +179,6 @@ if active_module == "⚔️ 模块一：欧亚大盘体系 (包揽浅中深)":
         with col_ext1:
             h_val = p_number_input(f"主队亚指让球数", f"m1_hcp_{match_id}_{wl}", -1.0, step=0.25)
             
-        # 安全无损渲染表格
         df_cur = p_data_editor(f"m1_df_{match_id}_{wl}", init_df_1)
         
         calc_key = f"m1_calc_{match_id}_{wl}"
@@ -258,7 +281,7 @@ if active_module == "⚔️ 模块一：欧亚大盘体系 (包揽浅中深)":
     with tab2: render_main_handicap_ui("中水区", current_match)
     with tab3: render_main_handicap_ui("深水区", current_match)
 
-# ================= 7. 模块二：进球数风控 =================
+# ================= 8. 模块二：进球数风控 =================
 elif active_module == "⚽ 模块二：进球数多维风控 (包揽浅中深)":
     st.header(f"⚽ {current_match} - 进球数全维透视")
     tab1, tab2, tab3 = st.tabs(["🟢 浅水区 (进球数)", "🟡 中水区 (进球数)", "🔴 深水区 (进球数)"])
@@ -328,7 +351,7 @@ elif active_module == "⚽ 模块二：进球数多维风控 (包揽浅中深)":
     with tab2: render_goals_ui("中水区", current_match)
     with tab3: render_goals_ui("深水区", current_match)
 
-# ================= 8. 模块三：体彩高阶工具 =================
+# ================= 9. 模块三：体彩高阶工具 =================
 elif active_module == "🎫 模块三：高阶工具 (DC矩阵/EV切片)":
     st.header(f"🎫 {current_match} - 高阶价值提纯")
     
