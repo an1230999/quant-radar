@@ -18,10 +18,10 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 强制清空被旧版本污染的错误缓存
-if "FX2_V_FINAL_13" not in st.session_state:
+# 强制清空旧版本残留的报错毒瘤，植入终极 V15 序列号
+if "FX2_V_FINAL_15" not in st.session_state:
     st.session_state.clear()
-    st.session_state["FX2_V_FINAL_13"] = True
+    st.session_state["FX2_V_FINAL_15"] = True
 
 # ================= 2. 🔐 核心防盗门：访问密码 =================
 def check_password():
@@ -34,7 +34,7 @@ def check_password():
         col1, col2, col3 = st.columns([1,1,1])
         with col2:
             if st.button("🚀 解锁终端", use_container_width=True):
-                # 👇 =========== 【在此修改你的专属密码】 =========== 👇
+                # 👇 =========== 【在此修改专属密码】 =========== 👇
                 if pwd == "HT888":  
                     st.session_state["password_correct"] = True
                     st.rerun()
@@ -46,7 +46,7 @@ def check_password():
 if not check_password():
     st.stop()
 
-st.title("🏦 FX2 全维量化对冲终端 (全模打通·永固版)")
+st.title("🏦 FX2 全维量化对冲终端 (极速丝滑·终极版)")
 
 # ================= 3. 核心数学引擎 =================
 def calc_pure_prob_array(arr):
@@ -90,34 +90,49 @@ def dixon_coles_full_matrix(lambda_, mu_, rho_):
     idx = [f"主进{i}" for i in range(7)] + ["主进7+"]
     return pd.DataFrame(P_col_rounded, columns=cols, index=idx), p_hw2, p_hw1, p_draw, p_au, P_col_rounded
 
-# ================= 4. 🌟 纯净双态持久化架构 (拒绝崩溃) =================
-def safe_number_input(label, perm_key, default_val, format="%.4f", step=0.0010):
-    wid_key = "wid_" + perm_key
-    if perm_key not in st.session_state:
-        st.session_state[perm_key] = default_val
+# ================= 4. 🌟 终极防闪退回调系统 (彻底告别吞字) =================
+def safe_number_input(label, state_key, default_val, format="%.4f", step=0.0010):
+    wid_key = "wid_" + state_key
+    
+    if state_key not in st.session_state:
+        st.session_state[state_key] = default_val
+
+    # 回调函数：用户每一次击键，瞬间存入安全库
+    def num_callback(s_key=state_key, w_key=wid_key):
+        st.session_state[s_key] = st.session_state[w_key]
+
     if wid_key not in st.session_state:
-        st.session_state[wid_key] = st.session_state[perm_key]
+        st.session_state[wid_key] = st.session_state[state_key]
         
-    val = st.number_input(label, format=format, step=step, key=wid_key)
-    st.session_state[perm_key] = val
+    val = st.number_input(label, format=format, step=step, key=wid_key, on_change=num_callback)
     return val
 
-def safe_data_editor(perm_key, default_df):
-    wid_key = "wid_" + perm_key
-    if perm_key not in st.session_state:
-        st.session_state[perm_key] = default_df.copy()
-        
+def safe_data_editor(state_key, init_df):
+    wid_key = "wid_" + state_key
+    df_key = "df_" + state_key # 全局完整表格挂载点
+
+    if state_key not in st.session_state:
+        st.session_state[state_key] = {"edited_rows": {}, "added_rows": [], "deleted_rows": []}
+
+    # 回调函数：不改变底座，只记录修改痕迹，彻底拒绝闪退！
+    def df_callback(s_key=state_key, w_key=wid_key):
+        st.session_state[s_key] = st.session_state[w_key]
+
+    if wid_key not in st.session_state:
+        st.session_state[wid_key] = st.session_state[state_key]
+
     edited_df = st.data_editor(
-        st.session_state[perm_key],
+        init_df, # 核心：永远喂给组件一个静态底座，它就不会发疯重绘了
         hide_index=True,
         num_rows="fixed",
         use_container_width=True,
-        key=wid_key
+        key=wid_key,
+        on_change=df_callback
     )
-    st.session_state[perm_key] = edited_df
+    st.session_state[df_key] = edited_df
     return edited_df
 
-# ================= 5. 初始化原初白板数据 =================
+# ================= 5. 绝对静态的初始化底座 =================
 init_df_1 = pd.DataFrame([
     ["标盘-胜", 2.45, 2.32], ["标盘-平", 3.20, 3.20], ["标盘-负", 2.45, 2.60],
     ["让盘-胜", 5.50, 5.30], ["让盘-平", 4.10, 4.00], ["让盘-负", 1.42, 1.45]
@@ -268,8 +283,10 @@ elif active_module == "⚽ 模块二：进球数多维风控":
         z2, z3, z4, z5, z6, v_limit = render_thresholds("m2", match_id, wl)
         st.markdown(f"### 📥 {wl} 数据录入区")
         col_ext1, col_ext2 = st.columns(2)
-        with col_ext1: safe_number_input(f"主队亚指让球", f"m2_hcp_{match_id}_{wl}", -0.75, format="%.2f", step=0.25)
-        with col_ext2: safe_number_input(f"大小球盘口", f"m2_ou_{match_id}_{wl}", 2.50, format="%.2f", step=0.25)
+        with col_ext1: 
+            h_val2 = safe_number_input(f"主队亚指让球", f"m2_hcp_{match_id}_{wl}", -0.75, format="%.2f", step=0.25)
+        with col_ext2: 
+            ou_val = safe_number_input(f"大小球盘口", f"m2_ou_{match_id}_{wl}", 2.50, format="%.2f", step=0.25)
             
         df_cur = safe_data_editor(f"m2_df_{match_id}_{wl}", init_df_2)
         calc_key = f"m2_calc_{match_id}_{wl}"
@@ -298,8 +315,6 @@ elif active_module == "⚽ 模块二：进球数多维风控":
             
             if not np.isnan(c_7).all():
                 even_prob, odd_prob = round(float(np.nansum(c_7[[0,2,4,6]])), 4), round(float(np.nansum(c_7[[1,3,5,7]])), 4)
-                h_val2 = st.session_state[f"m2_hcp_{match_id}_{wl}"]
-                ou_val = st.session_state[f"m2_ou_{match_id}_{wl}"]
                 if abs(h_val2) <= 0.25: core_g = "0球, 1球, 2球"
                 elif abs(h_val2) <= 0.75: core_g = "2球, 3球"
                 elif abs(h_val2) <= 1.25: core_g = "3球, 4球"
@@ -373,7 +388,7 @@ elif active_module == "🧬 模块四：异构交叉与零和对冲":
         st.markdown("### 🔍 异构交叉验证：盘口物理边界 vs 泊松数学期望")
         st.info("原理：自动提取【模块一：浅水区】的让球盘，与【模块三】算出的泊松预期净胜球进行撕裂度对比。如果让球盘远超数学期望，即为极致诱导或深水设伏！")
         try:
-            ah_val = st.session_state[f"m1_hcp_{current_match}_浅水区"]
+            ah_val = st.session_state.get(f"m1_hcp_{current_match}_浅水区", -1.0)
             tg_val = st.session_state.get(f"m3_tg_{current_match}", 2.75)
             hcp_val = st.session_state.get(f"m3_hcp_{current_match}", 0.0)
             xg_h, xg_a = (tg_val - hcp_val) / 2, (tg_val + hcp_val) / 2
@@ -395,7 +410,8 @@ elif active_module == "🧬 模块四：异构交叉与零和对冲":
         st.markdown("### 🏦 机构真实赔付敞口与暗水探测")
         st.info("原理：通过临场赔率反算机构的资金盈亏平衡点。如果某一项赔付敞口指数异常大，说明机构在悄悄吸收冷门重注！")
         try:
-            df_m1 = st.session_state[f"m1_df_{current_match}_浅水区"]
+            # 跨模块提取最新数据表
+            df_m1 = st.session_state.get(f"df_m1_df_{current_match}_浅水区", init_df_1)
             d_odds = pd.to_numeric(df_m1['临场'][0:3], errors='coerce').values
             if np.isnan(d_odds).any(): raise ValueError
             
