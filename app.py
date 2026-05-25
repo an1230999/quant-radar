@@ -20,7 +20,6 @@ st.markdown("""
 
 # ================= 2. 🔐 核心防盗门：访问密码拦截器 =================
 def check_password():
-    """验证密码是否正确，如果不正确则阻断后续所有代码执行"""
     if "password_correct" not in st.session_state:
         st.session_state["password_correct"] = False
 
@@ -31,20 +30,17 @@ def check_password():
         with col2:
             if st.button("🚀 解锁终端", use_container_width=True):
                 # 👇 =========== 【在这里修改你的密码】 =========== 👇
-                if pwd == "HT888": 
+                if pwd == "FX888": 
                     st.session_state["password_correct"] = True
-                    st.rerun()  # 密码正确，刷新页面放行
+                    st.rerun()
                 else:
                     st.error("❌ 密钥验证失败，请重新输入。")
         return False
     return True
 
-# 如果密码错误，强制停止云端服务器继续读取下方代码
 if not check_password():
     st.stop()
 
-
-# ========================== 🔓 密码验证通过后，才会执行以下所有量化代码 ==========================
 st.title("🏦 FX2 全维量化对冲终端 (5线程并发·加密版)")
 
 # ================= 3. 核心数学引擎 =================
@@ -156,6 +152,38 @@ def render_thresholds(mod, match, wl):
         with cols[5]: v  = p_number_input("T-60加速", f"{mod}_v_{match}_{wl}", defs[5])
     return z2, z3, z4, z5, z6, v
 
+def init_session_state():
+    if "FX2_V_FINAL_6" not in st.session_state:
+        for m in matches_list:
+            for w in water_levels:
+                st.session_state[f"m1_df_{m}_{w}"] = init_df_1.copy()
+                st.session_state[f"m1_hcp_{m}_{w}"] = -1.0
+                st.session_state[f"m1_calc_{m}_{w}"] = False  
+                
+                st.session_state[f"m2_df_{m}_{w}"] = init_df_2.copy()
+                st.session_state[f"m2_hcp_{m}_{w}"] = -0.75
+                st.session_state[f"m2_ou_{m}_{w}"] = 2.50  # 新增大小球盘口初始化
+                st.session_state[f"m2_calc_{m}_{w}"] = False  
+                
+                for mod in ["m1", "m2"]:
+                    defs = get_thresholds_defaults(w)
+                    st.session_state[f"{mod}_z2_{m}_{w}"] = defs[0]
+                    st.session_state[f"{mod}_z3_{m}_{w}"] = defs[1]
+                    st.session_state[f"{mod}_z4_{m}_{w}"] = defs[2]
+                    st.session_state[f"{mod}_z5_{m}_{w}"] = defs[3]
+                    st.session_state[f"{mod}_z6_{m}_{w}"] = defs[4]
+                    st.session_state[f"{mod}_v_{m}_{w}"] = defs[5]
+
+            st.session_state[f"m3_df_{m}"] = init_df_3.copy()
+            st.session_state[f"m3_tg_{m}"] = 2.75
+            st.session_state[f"m3_hcp_{m}"] = 0.0
+            st.session_state[f"m3_rho_{m}"] = -0.15
+            st.session_state[f"m3_calc_{m}"] = False
+            
+        st.session_state["FX2_V_FINAL_6"] = True
+
+init_session_state()
+
 # ================= 6. 赛事导航与侧边栏 =================
 current_match = st.radio("🏆 切换独立比赛流 (每场赛事数据独立封存，永不丢失)：", matches_list, horizontal=True)
 
@@ -182,8 +210,6 @@ if active_module == "⚔️ 模块一：欧亚大盘体系 (包揽浅中深)":
         df_cur = p_data_editor(f"m1_df_{match_id}_{wl}", init_df_1)
         
         calc_key = f"m1_calc_{match_id}_{wl}"
-        if calc_key not in st.session_state: st.session_state[calc_key] = False
-        
         if st.button(f"🚀 执行 {wl} 全维精算", type="primary", key=f"btn_{calc_key}"):
             st.session_state[calc_key] = True
             
@@ -290,15 +316,15 @@ elif active_module == "⚽ 模块二：进球数多维风控 (包揽浅中深)":
         z2, z3, z4, z5, z6, v_limit = render_thresholds("m2", match_id, wl)
         
         st.markdown(f"### 📥 {wl} 数据录入区")
-        col_ext1, _ = st.columns(2)
+        col_ext1, col_ext2 = st.columns(2)
         with col_ext1:
             h_val2 = p_number_input(f"主队亚指让球", f"m2_hcp_{match_id}_{wl}", -0.75, step=0.25)
+        with col_ext2:
+            ou_val = p_number_input(f"大小球盘口 (记录参考用)", f"m2_ou_{match_id}_{wl}", 2.50, step=0.25)
             
         df_cur = p_data_editor(f"m2_df_{match_id}_{wl}", init_df_2)
         
         calc_key = f"m2_calc_{match_id}_{wl}"
-        if calc_key not in st.session_state: st.session_state[calc_key] = False
-        
         if st.button(f"🚀 执行 {wl} 进球雷达扫描", type="primary", key=f"btn_{calc_key}"):
             st.session_state[calc_key] = True
             
@@ -357,9 +383,9 @@ elif active_module == "🎫 模块三：高阶工具 (DC矩阵/EV切片)":
     
     st.markdown("### ⚙️ 全局 DC 双泊松底座参数")
     c1, c2, c3 = st.columns(3)
-    with c1: tg = p_number_input("进球盘", f"m3_tg_{current_match}", 2.75, step=0.25)
-    with c2: hcp = p_number_input("让球盘", f"m3_hcp_{current_match}", 0.0, step=0.25)
-    with c3: rho = p_number_input("DC系数", f"m3_rho_{current_match}", -0.15, step=0.01)
+    with c1: tg = p_number_input("进球盘 (大小球)", f"m3_tg_{current_match}", 2.75, step=0.25)
+    with c2: hcp = p_number_input("让球盘 (主队亚指)", f"m3_hcp_{current_match}", 0.0, step=0.25)
+    with c3: rho = p_number_input("DC依赖系数 (ρ)", f"m3_rho_{current_match}", -0.15, step=0.01)
     
     xg_h, xg_a = (tg - hcp) / 2, (tg + hcp) / 2
     
