@@ -17,10 +17,10 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 强制核弹级清理：粉毁旧版本引发的一切哈希错误残留
-if "FX2_V_FINAL_999" not in st.session_state:
+# 强制核弹级清理：粉毁旧版本引发的一切残留
+if "FX2_V_FINAL_16" not in st.session_state:
     st.session_state.clear()
-    st.session_state["FX2_V_FINAL_999"] = True
+    st.session_state["FX2_V_FINAL_16"] = True
 
 # ================= 2. 🔐 核心防盗门：访问密码 =================
 def check_password():
@@ -40,7 +40,7 @@ def check_password():
     return True
 
 if not check_password(): st.stop()
-st.title("🏦 FX2 全维量化对冲终端 (原生防弹·终极稳固版)")
+st.title("🏦 FX2 全维量化对冲终端 (原生防弹·全频提取版)")
 
 # ================= 3. 核心数学引擎 (全抗 NaN 防御) =================
 def calc_pure_prob_array(arr):
@@ -176,7 +176,6 @@ if active_module == "⚔️ 模块一：欧亚大盘体系":
             s_theo, u_theo = np.full(6, np.nan), np.full(6, np.nan)
             t_open, v_open, w_traj, aa_hedge = ["⚪ 无对照"]*6, ["⚪ 无对照"]*6, ["⚪ 无对照"]*6, ["⚪ 动量未达标"]*6
             
-            # 全面补齐主队让球、受让、以及平手盘(h_val=0)的底层映射，彻底消灭 NaN
             if h_val < 0:
                 s_theo[0], u_theo[0] = prob_c[3] + prob_c[4], prob_d[3] + prob_d[4]
                 s_theo[1], u_theo[1] = prob_c[5] - prob_c[2], prob_d[5] - prob_d[2]
@@ -191,7 +190,7 @@ if active_module == "⚔️ 模块一：欧亚大盘体系":
                 s_theo[3], u_theo[3] = prob_c[0] + prob_c[1], prob_d[0] + prob_d[1]
                 s_theo[4], u_theo[4] = prob_c[2] - prob_c[5], prob_d[2] - prob_d[5]
                 s_theo[5], u_theo[5] = prob_c[2] - prob_c[4], prob_d[2] - prob_d[4]
-            else: # h_val == 0 平手盘
+            else:
                 s_theo[0], u_theo[0] = prob_c[0] - prob_c[2], prob_d[0] - prob_d[2]
                 s_theo[1], u_theo[1] = prob_c[1], prob_d[1]
                 s_theo[2], u_theo[2] = prob_c[2] - prob_c[0], prob_d[2] - prob_d[0]
@@ -346,20 +345,21 @@ elif active_module == "🎫 模块三：高阶工具 (DC矩阵)":
 # ================= 10. 模块四：异构交叉与零和对冲 =================
 elif active_module == "🧬 模块四：异构交叉与零和对冲":
     st.header(f"🧬 {current_match} - 终极异构验证与对冲引擎")
+    source_wl = st.radio("📡 选择底层数据提取源 (与模块一联动)：", ["浅水区", "中水区", "深水区"], horizontal=True)
     tab_a, tab_b, tab_c = st.tabs(["🔍 亚盘 vs xG 撕裂检测", "🏦 机构暗水剥离 (凯利敞口)", "⚖️ 荷兰式绝对零和对冲器"])
     
     with tab_a:
         st.markdown("### 🔍 异构交叉验证：盘口物理边界 vs 泊松数学期望")
-        st.info("原理：自动提取【模块一：浅水区】的让球盘，与【模块三】算出的泊松预期净胜球进行对比。如果让球盘远超数学期望，即为极致诱导！")
+        st.info(f"原理：自动提取【模块一：{source_wl}】的让球盘，与【模块三】算出的泊松预期净胜球进行对比。如果让球盘远超数学期望，即为极致诱导！")
         try:
-            ah_val = st.session_state.get(f"m1_hcp_{current_match}_浅水区", -1.0)
+            ah_val = st.session_state.get(f"m1_hcp_{current_match}_{source_wl}", -1.0)
             tg_val = st.session_state.get(f"m3_tg_{current_match}", 2.75)
             hcp_val = st.session_state.get(f"m3_hcp_{current_match}", 0.0)
             xg_h, xg_a = (tg_val - hcp_val) / 2, (tg_val + hcp_val) / 2
             xg_diff = round(xg_h - xg_a, 4)
             
             c1, c2, c3 = st.columns(3)
-            c1.metric("机构物理开盘 (主队让球)", f"{ah_val}")
+            c1.metric(f"机构物理开盘 ({source_wl}让球)", f"{ah_val}")
             c2.metric("泊松数学推演 (主队净胜球)", f"{xg_diff}")
             mismatch = round(xg_diff - (-ah_val), 4)
             c3.metric("🌪️ 时空撕裂度 (Mismatch)", f"{mismatch}")
@@ -368,13 +368,17 @@ elif active_module == "🧬 模块四：异构交叉与零和对冲":
             elif mismatch <= -0.4: st.error("🚨 **极致诱杀陷阱：** 机构强行开出深盘造热主队，但数学期望极低，坚决去下盘/客队不败！")
             else: st.warning("⚖️ **盘理平衡：** 机构开盘与数学期望严丝合缝，没有明显的结构性漏洞。")
         except KeyError:
-            st.error("⚠️ 请先在【模块一：浅水区】和【模块三】中输入盘口数据。")
+            st.error(f"⚠️ 请先在【模块一：{source_wl}】和【模块三】中输入盘口数据。")
 
     with tab_b:
         st.markdown("### 🏦 机构真实赔付敞口与暗水探测")
         st.info("原理：通过临场赔率反算机构的资金盈亏平衡点。如果某一项赔付敞口指数异常大，说明机构在悄悄吸收冷门重注！")
         try:
-            d_odds = [st.session_state.get(f"m1_{current_match}_浅水区_r0_c1", 2.32), st.session_state.get(f"m1_{current_match}_浅水区_r1_c1", 3.20), st.session_state.get(f"m1_{current_match}_浅水区_r2_c1", 2.60)]
+            d_odds = [
+                st.session_state.get(f"m1_{current_match}_{source_wl}_r0_c1", 2.32),
+                st.session_state.get(f"m1_{current_match}_{source_wl}_r1_c1", 3.20),
+                st.session_state.get(f"m1_{current_match}_{source_wl}_r2_c1", 2.60)
+            ]
             d_odds = pd.to_numeric(d_odds, errors='coerce')
             if np.isnan(d_odds).any(): raise ValueError
             
@@ -383,12 +387,12 @@ elif active_module == "🧬 模块四：异构交叉与零和对冲":
             fair_prob = implied / (1 + margin)
             liability = fair_prob * d_odds
             
-            df_kelly = pd.DataFrame({"赛果": ["主胜", "平局", "客胜"], "临场赔率": d_odds, "被动抽水率": [f"{margin*100:.2f}%"]*3, "真实概率": np.round(fair_prob, 4), "⚠️ 机构敞口指数": np.round(liability, 4)})
+            df_kelly = pd.DataFrame({"赛果": ["主胜", "平局", "客胜"], f"{source_wl}临场赔率": d_odds, "被动抽水率": [f"{margin*100:.2f}%"]*3, "真实概率": np.round(fair_prob, 4), "⚠️ 机构敞口指数": np.round(liability, 4)})
             st.dataframe(df_kelly, hide_index=True, use_container_width=True)
             max_idx = np.argmax(liability)
             st.error(f"💣 **暗水警报：** 当前机构对 **【{df_kelly['赛果'][max_idx]}】** 的赔付敞口最为敏感，存在防范动作！")
         except:
-            st.warning("⚠️ 请先在【模块一：浅水区】确认标盘临场赔率。")
+            st.warning(f"⚠️ 请先在【模块一：{source_wl}】确认标盘临场赔率。")
 
     with tab_c:
         st.markdown("### ⚖️ 荷兰式绝对零和对冲器 (Dutching Calculator)")
