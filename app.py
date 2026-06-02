@@ -19,9 +19,9 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # 强制核弹级清理：粉毁旧版本引发的一切残留
-if "FX2_V_FINAL_18" not in st.session_state:
+if "FX2_V_FINAL_19" not in st.session_state:
     st.session_state.clear()
-    st.session_state["FX2_V_FINAL_18"] = True
+    st.session_state["FX2_V_FINAL_19"] = True
 
 # ================= 2. 🔐 核心防盗门：访问密码 =================
 def check_password():
@@ -669,12 +669,12 @@ elif active_module == "🔭 模块五：V15 全息精算引擎":
         with col_out1:
             st.markdown("#### ⚽ 进球数评分切片")
             df_g = pd.DataFrame({"选项": opts_m2_g, "泊松理论": [f"{x*100:.1f}%" for x in math_g], "体彩实盘": [f"{x*100:.1f}%" for x in pTC_g], "危险指数": scores_g, "全息定性": tags_g}).sort_values(by="危险指数", ascending=False)
-            st.dataframe(df_g.style.applymap(lambda x: "background-color: #ffcccc; font-weight: bold; color: #dc3545;" if x >= 85 else "background-color: #fff3cd; font-weight: bold; color: #fd7e14;" if x >= 65 else "color: #28a745;" if x < 40 else "", subset=["危险指数"]), hide_index=True)
+            st.dataframe(df_g.style.map(lambda x: "background-color: #ffcccc; font-weight: bold; color: #dc3545;" if x >= 85 else "background-color: #fff3cd; font-weight: bold; color: #fd7e14;" if x >= 65 else "color: #28a745;" if x < 40 else "", subset=["危险指数"]), hide_index=True)
 
         with col_out2:
             st.markdown("#### 🔵 半全场评分切片")
             df_h = pd.DataFrame({"选项": opts_m2_h, "泊松理论": [f"{x*100:.1f}%" for x in math_h], "体彩实盘": [f"{x*100:.1f}%" for x in pTC_h], "危险指数": scores_h, "全息定性": tags_h}).sort_values(by="危险指数", ascending=False)
-            st.dataframe(df_h.style.applymap(lambda x: "background-color: #ffcccc; font-weight: bold; color: #dc3545;" if x >= 85 else "background-color: #fff3cd; font-weight: bold; color: #fd7e14;" if x >= 65 else "color: #28a745;" if x < 40 else "", subset=["危险指数"]), hide_index=True)
+            st.dataframe(df_h.style.map(lambda x: "background-color: #ffcccc; font-weight: bold; color: #dc3545;" if x >= 85 else "background-color: #fff3cd; font-weight: bold; color: #fd7e14;" if x >= 65 else "color: #28a745;" if x < 40 else "", subset=["危险指数"]), hide_index=True)
 
         best_g_name = df_g.iloc[0]["选项"]
         best_g_score = df_g.iloc[0]["危险指数"]
