@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import math
+from scipy.stats import poisson
 
 # ================= 1. 全局配置与UI优化 =================
 st.set_page_config(page_title="FX2 量化对冲终端", layout="wide", page_icon="🏦")
@@ -18,9 +19,9 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # 强制核弹级清理：粉毁旧版本引发的一切残留
-if "FX2_V_FINAL_17" not in st.session_state:
+if "FX2_V_FINAL_18" not in st.session_state:
     st.session_state.clear()
-    st.session_state["FX2_V_FINAL_17"] = True
+    st.session_state["FX2_V_FINAL_18"] = True
 
 # ================= 2. 🔐 核心防盗门：访问密码 =================
 def check_password():
@@ -40,7 +41,7 @@ def check_password():
     return True
 
 if not check_password(): st.stop()
-st.title("🏦 FX2 全维量化对冲终端 (V14.0 满血进化版)")
+st.title("🏦 FX2 全维量化对冲终端 (整合 V15 全息引擎版)")
 
 # ================= 3. 核心数学引擎 (全抗 NaN 防御) =================
 def calc_pure_prob_array(arr):
@@ -79,6 +80,65 @@ def dixon_coles_full_matrix(lambda_, mu_, rho_):
     idx = [f"主进{i}" for i in range(7)] + ["主进7+"]
     return pd.DataFrame(P_col_rounded, columns=cols, index=idx), p_hw2, p_hw1, p_draw, p_au, P_col_rounded
 
+# ================= 🌟 模块五专属核心引擎 🌟 =================
+def generate_poisson_baselines(tg, hcp):
+    """V15 专属：通过大小球和让球，推算进球数和半全场的绝对数学概率"""
+    xg_h = (tg - hcp) / 2
+    xg_a = (tg + hcp) / 2
+    goal_probs = np.zeros(8)
+    for i in range(10):
+        for j in range(10):
+            p = poisson.pmf(i, xg_h) * poisson.pmf(j, xg_a)
+            if i+j < 7: goal_probs[i+j] += p
+            else: goal_probs[7] += p
+            
+    ht_xg_h, ht_xg_a = xg_h * 0.45, xg_a * 0.45
+    sh_xg_h, sh_xg_a = xg_h * 0.55, xg_a * 0.55
+    ht_probs, sh_probs = {"W": 0, "D": 0, "L": 0}, {"W": 0, "D": 0, "L": 0}
+    
+    for i in range(8):
+        for j in range(8):
+            p_ht, p_sh = poisson.pmf(i, ht_xg_h) * poisson.pmf(j, ht_xg_a), poisson.pmf(i, sh_xg_h) * poisson.pmf(j, sh_xg_a)
+            if i > j: ht_probs["W"] += p_ht; sh_probs["W"] += p_sh
+            elif i == j: ht_probs["D"] += p_ht; sh_probs["D"] += p_sh
+            else: ht_probs["L"] += p_ht; sh_probs["L"] += p_sh
+            
+    htft_math = [
+        ht_probs["W"] * (sh_probs["W"] + sh_probs["D"]*0.5),
+        ht_probs["W"] * (sh_probs["L"]*0.8 + sh_probs["D"]*0.5),
+        ht_probs["W"] * (sh_probs["L"]*0.2),
+        ht_probs["D"] * sh_probs["W"],
+        ht_probs["D"] * sh_probs["D"],
+        ht_probs["D"] * sh_probs["L"],
+        ht_probs["L"] * (sh_probs["W"]*0.2),
+        ht_probs["L"] * (sh_probs["W"]*0.8 + sh_probs["D"]*0.5),
+        ht_probs["L"] * (sh_probs["L"] + sh_probs["D"]*0.5)
+    ]
+    
+    if np.sum(goal_probs) > 0: goal_probs = goal_probs / np.sum(goal_probs)
+    if np.sum(htft_math) > 0: htft_math = np.array(htft_math) / np.sum(htft_math)
+    return np.round(goal_probs, 4), np.round(htft_math, 4)
+
+def calculate_score(tc_pure, eu_pure, math_pure, is_in_trend, is_hk_cliff, is_poison_bait):
+    """V15 专属：0-100分动态权重打分系统"""
+    score = 0
+    dev_eu = (tc_pure / eu_pure) - 1
+    dev_math = (tc_pure / math_pure) - 1
+    
+    if dev_eu > 0.05: score += min(35, dev_eu * 200) 
+    if dev_math > 0.08: score += min(25, dev_math * 100)
+    if is_in_trend and dev_eu > 0: score += 20
+    if is_hk_cliff: score += 50
+    if is_poison_bait: score = max(0, score - 50)
+    
+    score = min(100, max(0, round(score)))
+    if score >= 85: tag = "👑 绝对核心稳胆"
+    elif score >= 65: tag = "🛡️ 次选真实防守"
+    elif score >= 40: tag = "⚪ 正常水位波动"
+    else: tag = "☠️ 诱导杀猪盘"
+    return score, tag
+
+
 # ================= 4. 🌟 终极防闪退墙 (废除表格，改用矩阵) =================
 def safe_number_input(label, state_key, default_val, format="%.4f", step=0.0010):
     wid_key = "wid_" + state_key
@@ -115,7 +175,6 @@ opts_m1 = ["标盘-胜", "标盘-平", "标盘-负", "让盘-胜", "让盘-平",
 cols_m1 = ["初盘", "临场"]
 init_m1 = [[2.45, 2.32], [3.20, 3.20], [2.45, 2.60], [5.50, 5.30], [4.10, 4.00], [1.42, 1.45]]
 
-# 🔴 V14.0 专属进球数及半全场底座参数
 opts_m2_g = ["0球", "1球", "2球", "3球", "4球", "5球", "6球", "7+球"]
 cols_m2_new = ["365赔率", "香港马会", "中国体彩"]
 init_m2_g = [[15.0, 13.0, 14.0], [5.5, 5.3, 5.8], [4.0, 3.75, 3.7], [4.0, 3.7, 3.4], [5.5, 4.6, 4.8], [9.0, 6.8, 7.8], [17.0, 13.0, 15.0], [21.0, 18.0, 23.0]]
@@ -144,7 +203,7 @@ def render_thresholds(mod, match, wl):
 # ================= 6. 导航矩阵 =================
 current_match = st.radio("🏆 切换并发赛事 (独立加密封存，切换永不丢失)：", matches_list, horizontal=True)
 st.sidebar.title("🧭 矩阵控制台")
-active_module = st.sidebar.radio("=== 核心风控体系 ===", ["⚔️ 模块一：欧亚大盘体系", "⚽ 模块二：进球数多维风控 (V14完全体)", "🎫 模块三：高阶工具 (DC矩阵)", "🧬 模块四：异构交叉与零和对冲"])
+active_module = st.sidebar.radio("=== 核心风控体系 ===", ["⚔️ 模块一：欧亚大盘体系", "⚽ 模块二：进球数多维风控 (V14完全体)", "🎫 模块三：高阶工具 (DC矩阵)", "🧬 模块四：异构交叉与零和对冲", "🔭 模块五：V15 全息精算引擎"])
 
 # ================= 7. 模块一：欧亚大盘 (保留原样无损) =================
 if active_module == "⚔️ 模块一：欧亚大盘体系":
@@ -244,7 +303,7 @@ if active_module == "⚔️ 模块一：欧亚大盘体系":
     with tab2: render_main_handicap_ui("中水区", current_match)
     with tab3: render_main_handicap_ui("深水区", current_match)
 
-# ================= 8. 模块二：进球数多维风控 (V14.0 满血进化版 - 全面替换) =================
+# ================= 8. 模块二：进球数多维风控 (V14完全体 - 保留原样无损) =================
 elif active_module == "⚽ 模块二：进球数多维风控 (V14完全体)":
     st.header(f"⚽ {current_match} - 进球数与半全场绞杀模型 (V14.0 完全体)")
     st.info("⚠️ 系统提示：本模块已全面升级为包含【马会断崖防御】、【双轨大势引擎】及【内部撕裂雷达】的 V14.0 纯净概率对冲内核，摒弃传统的区间阈值，通过四位小数精度对机构实现绝对绞杀。")
@@ -252,12 +311,9 @@ elif active_module == "⚽ 模块二：进球数多维风控 (V14完全体)":
     tab1, tab2 = st.tabs(["🔴 进球数纯概率定性", "🔵 半全场双轨大势"])
 
     def get_rank(val, arr):
-        # 模仿 Excel RANK.EQ 逻辑，降序排名
         return sum(1 for v in arr if v > val) + 1
-
     def fmt(v): return f"{v:.4f}"
 
-    # ---------- 🔴 进球数雷达区 ----------
     with tab1:
         res_m2_g = render_odds_grid("m2g", current_match, "进球数", opts_m2_g, cols_m2_new, init_m2_g)
         calc_key_g = f"m2_calc_g_{current_match}"
@@ -279,7 +335,6 @@ elif active_module == "⚽ 模块二：进球数多维风控 (V14完全体)":
             cons = np.round((p365 + pHK) / 2, 4)
             devs = np.round((pTC / cons) - 1, 4)
             
-            # M3 宏观奇偶震荡雷达
             tc_odd = round(pTC[1] + pTC[3] + pTC[5] + pTC[7], 4)
             eu_odd = round(cons[1] + cons[3] + cons[5] + cons[7], 4)
             m3 = round(tc_odd - eu_odd, 4)
@@ -298,7 +353,6 @@ elif active_module == "⚽ 模块二：进球数多维风控 (V14完全体)":
             
             st.success(f"**🎯 宏观奇偶博弈差 (M3):**\n{macro_txt}")
             
-            # K列 终极决断
             k_texts = []
             for i in range(8):
                 rankTC = get_rank(pTC[i], pTC)
@@ -319,7 +373,6 @@ elif active_module == "⚽ 模块二：进球数多维风控 (V14完全体)":
                 elif devs[i] <= -0.1000 and rankTC > rankEU: kTxt = "🕳️ 【双重塌陷】体彩排位下降且降超10%，绝对诱导！"
                 elif devs[i] <= -0.1500: kTxt = "☠️ 【数据黑洞】纯概率严重脱节，虚假高赔陷阱。"
                 else: kTxt = "⚪ 市场资金均衡，无结构性破绽"
-                
                 k_texts.append(kTxt)
                 
             out_g = pd.DataFrame({
@@ -334,7 +387,6 @@ elif active_module == "⚽ 模块二：进球数多维风控 (V14完全体)":
             st.markdown("### 📊 进球数上帝视角输出板")
             st.dataframe(out_g, hide_index=True, use_container_width=True)
 
-    # ---------- 🔵 半全场雷达区 ----------
     with tab2:
         res_m2_h = render_odds_grid("m2h", current_match, "半全场", opts_m2_h, cols_m2_new, init_m2_h)
         calc_key_h = f"m2_calc_h_{current_match}"
@@ -356,7 +408,6 @@ elif active_module == "⚽ 模块二：进球数多维风控 (V14完全体)":
             cons = np.round((p365 + pHK) / 2, 4)
             devs = np.round((pTC / cons) - 1, 4)
             
-            # N16 双轨趋势引擎
             tcW = round(pTC[0] + pTC[3] + pTC[6], 4)
             tcD = round(pTC[1] + pTC[4] + pTC[7], 4)
             tcL = round(pTC[2] + pTC[5] + pTC[8], 4)
@@ -376,7 +427,6 @@ elif active_module == "⚽ 模块二：进球数多维风控 (V14完全体)":
                 
             st.success(f"**🎯 内部全场趋势预测聚合 (N16):** {n16}")
             
-            # K列 终极决断
             k_texts_h = []
             for i in range(9):
                 name = opts_m2_h[i]
@@ -402,7 +452,6 @@ elif active_module == "⚽ 模块二：进球数多维风控 (V14完全体)":
                     if devs[i] > 0: kTxt = f"💎 【顺势暗防】大势共振且体彩暗中降赔(+{devs[i]*100:.2f}%)，核心优选！"
                     else: kTxt = f"🛡️ 【大势掩护】吻合大势，正常水位波动({devs[i]*100:.2f}%)，次选防守。"
                 else: kTxt = "⚪ 赔付结构吻合欧亚共识，按兵不动"
-                
                 k_texts_h.append(kTxt)
                 
             out_h = pd.DataFrame({
@@ -535,3 +584,104 @@ elif active_module == "🧬 模块四：异构交叉与零和对冲":
             col_r2.success(f"**买入 选项B：** `{stake_b:.2f}` 元")
             if profit > 0: col_r3.info(f"**保底净利润：** `+{profit:.2f}` 元")
             else: col_r3.error(f"**不可避免损耗：** `{profit:.2f}` 元")
+
+# ================= 11. 模块五：V15 全息精算引擎 (全新独立嵌入) =================
+elif active_module == "🔭 模块五：V15 全息精算引擎":
+    st.header(f"🔭 {current_match} - V15 全息量化精算实验室")
+    st.caption("【独立运行版】内嵌泊松数学期望、动态积分权重阵列与时空收敛引擎")
+    
+    with st.expander("⚙️ 引擎底座参数 (点击展开设定大盘基准)", expanded=True):
+        c1, c2 = st.columns(2)
+        with c1: m5_ou_val = safe_number_input("大小球基准盘", f"m5_ou_{current_match}", 2.50, format="%.2f", step=0.25)
+        with c2: m5_hcp_val = safe_number_input("亚指让球(主让为负)", f"m5_hcp_{current_match}", -0.50, format="%.2f", step=0.25)
+        st.info("💡 泊松数学引擎将根据上述盘口，自动生成比赛绝对公平概率，作为第三方照妖镜。")
+        
+    c1, c2 = st.columns(2)
+    with c1: res_m5_g = render_odds_grid("m5g", current_match, "进球数矩阵", opts_m2_g, cols_m2_new, init_m2_g)
+    with c2: res_m5_h = render_odds_grid("m5h", current_match, "半全场矩阵", opts_m2_h, cols_m2_new, init_m2_h)
+    
+    calc_key_m5 = f"m5_calc_{current_match}"
+    if calc_key_m5 not in st.session_state: st.session_state[calc_key_m5] = False
+    
+    st.write("")
+    if st.button("🚀 启动 V15 全息交叉精算", type="primary", use_container_width=True, key=f"btn_{calc_key_m5}"):
+        st.session_state[calc_key_m5] = True
+        
+    if st.session_state[calc_key_m5]:
+        st.markdown("---")
+        math_g, math_h = generate_poisson_baselines(m5_ou_val, m5_hcp_val)
+        
+        g_365 = pd.to_numeric(res_m5_g['365赔率'], errors='coerce').fillna(0).values
+        g_hk = pd.to_numeric(res_m5_g['香港马会'], errors='coerce').fillna(0).values
+        g_tc = pd.to_numeric(res_m5_g['中国体彩'], errors='coerce').fillna(0).values
+        
+        h_365 = pd.to_numeric(res_m5_h['365赔率'], errors='coerce').fillna(0).values
+        h_hk = pd.to_numeric(res_m5_h['香港马会'], errors='coerce').fillna(0).values
+        h_tc = pd.to_numeric(res_m5_h['中国体彩'], errors='coerce').fillna(0).values
+        
+        p365_g, pHK_g, pTC_g = calc_pure_prob_array(g_365), calc_pure_prob_array(g_hk), calc_pure_prob_array(g_tc)
+        p365_h, pHK_h, pTC_h = calc_pure_prob_array(h_365), calc_pure_prob_array(h_hk), calc_pure_prob_array(h_tc)
+        
+        cons_g, cons_h = np.round((p365_g + pHK_g) / 2, 4), np.round((p365_h + pHK_h) / 2, 4)
+        
+        tcW = pTC_h[0] + pTC_h[3] + pTC_h[6]
+        tcD = pTC_h[1] + pTC_h[4] + pTC_h[7]
+        tcL = pTC_h[2] + pTC_h[5] + pTC_h[8]
+        trends = [{"n": "胜", "v": tcW}, {"n": "平", "v": tcD}, {"n": "负", "v": tcL}]
+        trends.sort(key=lambda x: x["v"], reverse=True)
+        n16 = "【双轨】" + trends[0]["n"] + trends[1]["n"] if (trends[0]["v"] - trends[1]["v"]) <= 0.03 else trends[0]["n"]
+        
+        m3 = round((pTC_g[1]+pTC_g[3]+pTC_g[5]+pTC_g[7]) - (cons_g[1]+cons_g[3]+cons_g[5]+cons_g[7]), 4)
+        odd_trend = "单数球" if m3 >= 0.015 else "双数球" if m3 <= -0.015 else "无明显偏好"
+        
+        scores_h, tags_h = [], []
+        for i in range(9):
+            is_in_trend = opts_m2_h[i][-1] in n16
+            is_hk_cliff = (g_hk[0] < 20 and g_hk[0]/g_365[0] <= 0.5) 
+            is_poison = ( (pTC_h[i]/cons_h[i] - 1) <= -0.08 and is_in_trend )
+            s, t = calculate_score(pTC_h[i], cons_h[i], math_h[i], is_in_trend, False, is_poison)
+            scores_h.append(s); tags_h.append(t)
+            
+        best_h_idx = np.argmax(scores_h)
+        best_h_name = opts_m2_h[best_h_idx]
+        buff_goals = []
+        if "胜" in best_h_name: buff_goals = [1, 2, 3, 4]
+        elif "平" in best_h_name: buff_goals = [0, 2, 4]
+        elif "负" in best_h_name: buff_goals = [1, 2, 3, 4]
+
+        scores_g, tags_g = [], []
+        for i in range(8):
+            is_in_trend = (i % 2 != 0 and m3 >= 0.015) or (i % 2 == 0 and m3 <= -0.015)
+            is_hk_cliff = (g_hk[i] / g_365[i] <= 0.5)
+            is_poison = ( (pTC_g[i]/cons_g[i] - 1) <= -0.08 and is_in_trend )
+            
+            s, t = calculate_score(pTC_g[i], cons_g[i], math_g[i], is_in_trend, is_hk_cliff, is_poison)
+            
+            if i in buff_goals and scores_h[best_h_idx] >= 65:
+                s = min(100, s + 15)
+                t = t + " (🔗受大势收敛强化)"
+            scores_g.append(s); tags_g.append(t)
+            
+        st.markdown("## 📊 V15.0 多维权重积分雷达阵列")
+        st.success(f"**🧭 宏观导航总线：** 半全场底层趋势指向 **{n16}**，进球数底层趋势指向 **{odd_trend}**。")
+        
+        col_out1, col_out2 = st.columns(2)
+        with col_out1:
+            st.markdown("#### ⚽ 进球数评分切片")
+            df_g = pd.DataFrame({"选项": opts_m2_g, "泊松理论": [f"{x*100:.1f}%" for x in math_g], "体彩实盘": [f"{x*100:.1f}%" for x in pTC_g], "危险指数": scores_g, "全息定性": tags_g}).sort_values(by="危险指数", ascending=False)
+            st.dataframe(df_g.style.applymap(lambda x: "background-color: #ffcccc; font-weight: bold; color: #dc3545;" if x >= 85 else "background-color: #fff3cd; font-weight: bold; color: #fd7e14;" if x >= 65 else "color: #28a745;" if x < 40 else "", subset=["危险指数"]), hide_index=True)
+
+        with col_out2:
+            st.markdown("#### 🔵 半全场评分切片")
+            df_h = pd.DataFrame({"选项": opts_m2_h, "泊松理论": [f"{x*100:.1f}%" for x in math_h], "体彩实盘": [f"{x*100:.1f}%" for x in pTC_h], "危险指数": scores_h, "全息定性": tags_h}).sort_values(by="危险指数", ascending=False)
+            st.dataframe(df_h.style.applymap(lambda x: "background-color: #ffcccc; font-weight: bold; color: #dc3545;" if x >= 85 else "background-color: #fff3cd; font-weight: bold; color: #fd7e14;" if x >= 65 else "color: #28a745;" if x < 40 else "", subset=["危险指数"]), hide_index=True)
+
+        best_g_name = df_g.iloc[0]["选项"]
+        best_g_score = df_g.iloc[0]["危险指数"]
+        
+        st.markdown("---")
+        st.markdown("### 🎯 V15.0 跨域物理化学收敛定胆")
+        if (best_h_score := df_h.iloc[0]["危险指数"]) >= 65 and best_g_score >= 65:
+            st.success(f"**✅ 高度收敛形成：** 两套模块底层逻辑产生物理化学反应。半全场主攻【{df_h.iloc[0]['选项']}】，进球数锁定【{best_g_name}】。建议直接查阅对应比分进行波胆封锁！")
+        else:
+            st.warning("⚠️ **未形成绝对收敛：** 各模块最高分均未达到 65 分的核心防守红线，比赛可能处于机构的盲区或资金均衡态，请谨慎介入或降低注码。")
