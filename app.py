@@ -19,9 +19,9 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # 强制核弹级清理：粉毁旧版本引发的一切残留
-if "FX2_V_FINAL_30" not in st.session_state:
+if "FX2_V_FINAL_31" not in st.session_state:
     st.session_state.clear()
-    st.session_state["FX2_V_FINAL_30"] = True
+    st.session_state["FX2_V_FINAL_31"] = True
 
 # ================= 2. 🔐 核心防盗门：访问密码 =================
 def check_password():
@@ -124,6 +124,7 @@ opts_m3 = ["标准盘", "让球盘"]
 cols_m3 = ["胜", "平", "负", "国彩让球数"]
 init_m3 = [[2.32, 3.20, 2.60, 0.0], [5.30, 4.00, 1.45, -1.0]]
 
+# M5 参数
 opts_m5_g = ["0球", "1球", "2球", "3球", "4球", "5球", "6球", "7+球"]
 cols_m5_new = ["365赔率", "马会赔率", "体彩赔率"]
 init_m5_g = [[17.0, 15.0, 17.0], [6.5, 5.8, 6.5], [4.0, 3.9, 4.0], [4.0, 3.7, 3.65], [5.0, 4.35, 4.25], [8.0, 6.6, 7.0], [15.0, 11.0, 12.0], [19.0, 16.0, 18.0]]
@@ -248,7 +249,7 @@ if active_module == "⚔️ 模块一：欧亚大盘体系":
     with tab2: render_main_handicap_ui("中水区", current_match)
     with tab3: render_main_handicap_ui("深水区", current_match)
 
-# ================= 8. 模块二：进球数多维风控 =================
+# ================= 8. 模块二：进球数多维风控 (绝对不变) =================
 elif active_module == "⚽ 模块二：进球数多维风控":
     st.header(f"⚽ {current_match} - 进球数全维透视")
     tab1, tab2, tab3 = st.tabs(["🟢 浅水区", "🟡 中水区", "🔴 深水区"])
@@ -302,7 +303,7 @@ elif active_module == "⚽ 模块二：进球数多维风控":
     with tab2: render_goals_ui("中水区", current_match)
     with tab3: render_goals_ui("深水区", current_match)
 
-# ================= 9. 模块三：高阶工具 (DC矩阵) =================
+# ================= 9. 模块三：高阶工具 (绝对不变) =================
 elif active_module == "🎫 模块三：高阶工具 (DC矩阵)":
     st.header(f"🎫 {current_match} - 高阶价值提纯")
     
@@ -349,7 +350,7 @@ elif active_module == "🎫 模块三：高阶工具 (DC矩阵)":
                 out_df3 = pd.DataFrame({"投注项": ["标准胜", "标准平", "标准负", "让球胜", "让球平", "让球负"], "推演概率": np.round(intl_prob, 4), "数学EV": ev_vals, "雷达定性": judge})
                 st.dataframe(out_df3.fillna(""), hide_index=True, use_container_width=True)
 
-# ================= 10. 模块四：异构交叉与零和对冲 =================
+# ================= 10. 模块四：异构交叉与零和对冲 (绝对不变) =================
 elif active_module == "🧬 模块四：异构交叉与零和对冲":
     st.header(f"🧬 {current_match} - 终极异构验证与对冲引擎")
     source_wl = st.radio("📡 选择底层数据提取源 (与模块一联动)：", ["浅水区", "中水区", "深水区"], horizontal=True)
@@ -596,15 +597,15 @@ elif active_module == "🔭 模块五：V15 全息精算引擎":
     if st.session_state[calc_key_m5]:
         st.markdown("---")
         try:
-            # 1. 安全数据抽取与转换
+            # 1. 终极安全数据抽取与转换 (修正了列名提取暗号，绝对不会报 KeyError)
             math_g, math_h = generate_poisson_baselines(m5_ou_val, m5_hcp_val)
             g_365 = np.nan_to_num(np.array(res_m5_g['365赔率'], dtype=float), nan=0.0)
-            g_hk  = np.nan_to_num(np.array(res_m5_g['香港马会'], dtype=float), nan=0.0)
-            g_tc  = np.nan_to_num(np.array(res_m5_g['中国体彩'], dtype=float), nan=0.0)
+            g_hk  = np.nan_to_num(np.array(res_m5_g['马会赔率'], dtype=float), nan=0.0)
+            g_tc  = np.nan_to_num(np.array(res_m5_g['体彩赔率'], dtype=float), nan=0.0)
             
             h_365 = np.nan_to_num(np.array(res_m5_h['365赔率'], dtype=float), nan=0.0)
-            h_hk  = np.nan_to_num(np.array(res_m5_h['香港马会'], dtype=float), nan=0.0)
-            h_tc  = np.nan_to_num(np.array(res_m5_h['中国体彩'], dtype=float), nan=0.0)
+            h_hk  = np.nan_to_num(np.array(res_m5_h['马会赔率'], dtype=float), nan=0.0)
+            h_tc  = np.nan_to_num(np.array(res_m5_h['体彩赔率'], dtype=float), nan=0.0)
             
             p365_g, pHK_g, pTC_g = calc_pure_prob_array(g_365), calc_pure_prob_array(g_hk), calc_pure_prob_array(g_tc)
             p365_h, pHK_h, pTC_h = calc_pure_prob_array(h_365), calc_pure_prob_array(h_hk), calc_pure_prob_array(h_tc)
@@ -630,10 +631,12 @@ elif active_module == "🔭 模块五：V15 全息精算引擎":
             eu_odd_sum = float(cons_g[1]+cons_g[3]+cons_g[5]+cons_g[7]) if not np.isnan(cons_g).any() else 0.0
             m3 = round(tc_odd_sum - eu_odd_sum, 4)
             
-            # 内部撕裂检测
-            odd_devs = [dev_g[1], dev_g[3], dev_g[5], dev_g[7]]
-            max_odd, min_odd = max(odd_devs), min(odd_devs)
-            is_tear = (max_odd - min_odd) >= 0.10
+            # 内部撕裂检测 (安全过滤掉所有的NaN值防止计算崩溃)
+            odd_devs = [x for x in [dev_g[1], dev_g[3], dev_g[5], dev_g[7]] if not pd.isna(x)]
+            if len(odd_devs) > 0:
+                is_tear = (max(odd_devs) - min(odd_devs)) >= 0.10
+            else:
+                is_tear = False
 
             m3_text = ""
             if m3 >= 0.025: m3_text = f"🌋 【SSS级防单】极值(+{m3*100:.2f}%)！体彩对奇数痛下杀手，单数球为全场核心稳胆！"
@@ -643,7 +646,7 @@ elif active_module == "🔭 模块五：V15 全息精算引擎":
             elif is_tear: m3_text = f"🌪️ 【内部撕裂】宏观极微({m3*100:.2f}%)，但单数球内部震幅超10%，庄家交叉做局，请以K列独立诊断为准！"
             else: m3_text = f"⚪ 【绝对均衡】差值极微({m3*100:.2f}%)，单双资金完美平衡，无任何做局痕迹。"
 
-            # 3. 构建进球数表列
+            # 3. 构建进球数表列 (使用 if else 防止 NaN 打印出来不美观)
             df_g_rows = []
             for i in range(8):
                 rankTC = sum(1 for v in pTC_g if v > pTC_g[i]) + 1
@@ -657,11 +660,11 @@ elif active_module == "🔭 模块五：V15 全息精算引擎":
                     "365赔率": f"{g_365[i]:.2f}",
                     "马会赔率": f"{g_hk[i]:.2f}",
                     "体彩赔率": f"{g_tc[i]:.2f}",
-                    "365纯净率": f"{p365_g[i]:.4f}",
-                    "马会纯净率": f"{pHK_g[i]:.4f}",
-                    "体彩纯净率": f"{pTC_g[i]:.4f}",
-                    "欧亚共识基准线": f"{cons_g[i]:.4f}",
-                    "体彩结构偏离率": f"{dev_g[i]:.4f}",
+                    "365纯净率": f"{p365_g[i]:.4f}" if not pd.isna(p365_g[i]) else "➖",
+                    "马会纯净率": f"{pHK_g[i]:.4f}" if not pd.isna(pHK_g[i]) else "➖",
+                    "体彩纯净率": f"{pTC_g[i]:.4f}" if not pd.isna(pTC_g[i]) else "➖",
+                    "欧亚共识基准线": f"{cons_g[i]:.4f}" if not pd.isna(cons_g[i]) else "➖",
+                    "体彩结构偏离率": f"{dev_g[i]:.4f}" if not pd.isna(dev_g[i]) else "➖",
                     "偏离梯度预警": j_warn,
                     "进球数跨维特殊值与终极决断": k_dec
                 })
@@ -680,11 +683,11 @@ elif active_module == "🔭 模块五：V15 全息精算引擎":
                     "365赔率": f"{h_365[i]:.2f}",
                     "马会赔率": f"{h_hk[i]:.2f}",
                     "体彩赔率": f"{h_tc[i]:.2f}",
-                    "365纯净率": f"{p365_h[i]:.4f}",
-                    "马会纯净率": f"{pHK_h[i]:.4f}",
-                    "体彩纯净率": f"{pTC_h[i]:.4f}",
-                    "欧亚共识基准线": f"{cons_h[i]:.4f}",
-                    "体彩结构偏离率": f"{dev_h[i]:.4f}",
+                    "365纯净率": f"{p365_h[i]:.4f}" if not pd.isna(p365_h[i]) else "➖",
+                    "马会纯净率": f"{pHK_h[i]:.4f}" if not pd.isna(pHK_h[i]) else "➖",
+                    "体彩纯净率": f"{pTC_h[i]:.4f}" if not pd.isna(pTC_h[i]) else "➖",
+                    "欧亚共识基准线": f"{cons_h[i]:.4f}" if not pd.isna(cons_h[i]) else "➖",
+                    "体彩结构偏离率": f"{dev_h[i]:.4f}" if not pd.isna(dev_h[i]) else "➖",
                     "偏离梯度预警": j_warn,
                     "半全场跨维特殊值与终极决断": k_dec
                 })
