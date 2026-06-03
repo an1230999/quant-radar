@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import math
 import traceback
+# 彻底移除了对 scipy 的依赖，改为纯底层原生算法计算
 
 # ================= 1. 全局配置与UI优化 =================
 st.set_page_config(page_title="FX2 量化对冲终端", layout="wide", page_icon="🏦")
@@ -19,9 +20,9 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # 强制核弹级清理：粉毁旧版本引发的一切残留
-if "FX2_V_FINAL_25" not in st.session_state:
+if "FX2_V_FINAL_26" not in st.session_state:
     st.session_state.clear()
-    st.session_state["FX2_V_FINAL_25"] = True
+    st.session_state["FX2_V_FINAL_26"] = True
 
 # ================= 2. 🔐 核心防盗门：访问密码 =================
 def check_password():
@@ -421,10 +422,10 @@ elif active_module == "🧬 模块四：异构交叉与零和对冲":
             if profit > 0: col_r3.info(f"**保底净利润：** `+{profit:.2f}` 元")
             else: col_r3.error(f"**不可避免损耗：** `{profit:.2f}` 元")
 
-# ================= 11. 模块五：V15 全息精算引擎 (全量防错与异常捕获版) =================
+# ================= 11. 模块五：V15 全息精算引擎 (彻底去Pandas强转版) =================
 elif active_module == "🔭 模块五：V15 全息精算引擎":
     st.header(f"🔭 {current_match} - V15 全息量化精算实验室")
-    st.caption("【终极防御版】内置全域空值隔离墙与防闪退机制")
+    st.caption("【终极防御版】内置全域空值隔离墙与最底层 NumPy 转换，绝不闪退！")
     
     # 纯原生算法，摒弃 scipy
     def get_poisson_pmf(k, lam):
@@ -511,13 +512,14 @@ elif active_module == "🔭 模块五：V15 全息精算引擎":
         try:
             math_g, math_h = generate_poisson_baselines(m5_ou_val, m5_hcp_val)
             
-            g_365 = pd.to_numeric(res_m5_g['365赔率'], errors='coerce').fillna(0).values
-            g_hk = pd.to_numeric(res_m5_g['香港马会'], errors='coerce').fillna(0).values
-            g_tc = pd.to_numeric(res_m5_g['中国体彩'], errors='coerce').fillna(0).values
+            # 🔥 彻底抛弃 Pandas 的 pd.to_numeric，直接用底层 numpy 转换，断绝一切数据类型异常！
+            g_365 = np.nan_to_num(np.array(res_m5_g['365赔率'], dtype=float), nan=0.0)
+            g_hk = np.nan_to_num(np.array(res_m5_g['香港马会'], dtype=float), nan=0.0)
+            g_tc = np.nan_to_num(np.array(res_m5_g['中国体彩'], dtype=float), nan=0.0)
             
-            h_365 = pd.to_numeric(res_m5_h['365赔率'], errors='coerce').fillna(0).values
-            h_hk = pd.to_numeric(res_m5_h['香港马会'], errors='coerce').fillna(0).values
-            h_tc = pd.to_numeric(res_m5_h['中国体彩'], errors='coerce').fillna(0).values
+            h_365 = np.nan_to_num(np.array(res_m5_h['365赔率'], dtype=float), nan=0.0)
+            h_hk = np.nan_to_num(np.array(res_m5_h['香港马会'], dtype=float), nan=0.0)
+            h_tc = np.nan_to_num(np.array(res_m5_h['中国体彩'], dtype=float), nan=0.0)
             
             p365_g, pHK_g, pTC_g = calc_pure_prob_array(g_365), calc_pure_prob_array(g_hk), calc_pure_prob_array(g_tc)
             p365_h, pHK_h, pTC_h = calc_pure_prob_array(h_365), calc_pure_prob_array(h_hk), calc_pure_prob_array(h_tc)
