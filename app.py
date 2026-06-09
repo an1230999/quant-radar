@@ -21,9 +21,9 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-if "FX2_V_FINAL_M7_TC" not in st.session_state:
+if "FX2_V_FINAL_M7_TC_FIX" not in st.session_state:
     st.session_state.clear()
-    st.session_state["FX2_V_FINAL_M7_TC"] = True
+    st.session_state["FX2_V_FINAL_M7_TC_FIX"] = True
 
 if "ai_signals" not in st.session_state:
     st.session_state["ai_signals"] = {"M1": None, "M3": None, "M4": None, "M5": None, "M7": None}
@@ -205,9 +205,9 @@ if active_module == "🏆 模块七：世界杯全息狙击终端 (TC主导)":
     st.info("📌 **外维对冲数据池 (365 & 马会)**：用于执行 M4 三向敞口对冲 与 M5 空间共识复核。")
     col_in1, col_in2 = st.columns(2)
     with col_in1:
-        res_m7_365 = render_odds_grid("m7_365", current_match, "365 全球基底 (胜/平/负)", ["365 标盘"], ["初盘", "临场"], [[2.00, 1.95], [3.40, 3.50], [3.60, 3.80]])
+        res_m7_365 = render_odds_grid("m7_365", current_match, "365 全球基底 (胜/平/负)", ["主胜", "平局", "客胜"], ["初盘", "临场"], [[2.00, 1.95], [3.40, 3.50], [3.60, 3.80]])
     with col_in2:
-        res_m7_hk = render_odds_grid("m7_hk", current_match, "马会 亚洲基底 (胜/平/负)", ["马会 标盘"], ["初盘", "临场"], [[1.95, 1.90], [3.20, 3.30], [3.50, 3.70]])
+        res_m7_hk = render_odds_grid("m7_hk", current_match, "马会 亚洲基底 (胜/平/负)", ["主胜", "平局", "客胜"], ["初盘", "临场"], [[1.95, 1.90], [3.20, 3.30], [3.50, 3.70]])
         
     st.markdown("---")
     st.markdown("### 🔭 体彩异常设防比分扫描器")
@@ -235,11 +235,11 @@ if active_module == "🏆 模块七：世界杯全息狙击终端 (TC主导)":
         tc_std_d, tc_let_d = tc_d_raw[0:3], tc_d_raw[3:6]
         
         # 365 和 HK 的标盘数据
-        b365_c = np.array([res_m7_365["初盘"][0], res_m7_365["初盘"][1], res_m7_365["初盘"][2]])
-        b365_d = np.array([res_m7_365["临场"][0], res_m7_365["临场"][1], res_m7_365["临场"][2]])
+        b365_c = safe_extract_array(res_m7_365["初盘"])
+        b365_d = safe_extract_array(res_m7_365["临场"])
         
-        hk_c = np.array([res_m7_hk["初盘"][0], res_m7_hk["初盘"][1], res_m7_hk["初盘"][2]])
-        hk_d = np.array([res_m7_hk["临场"][0], res_m7_hk["临场"][1], res_m7_hk["临场"][2]])
+        hk_c = safe_extract_array(res_m7_hk["初盘"])
+        hk_d = safe_extract_array(res_m7_hk["临场"])
         
         # 计算各方纯净率 (锁定 4 位小数)
         p_tc_std_c, p_tc_std_d = calc_pure_prob_array(tc_std_c), calc_pure_prob_array(tc_std_d)
@@ -411,9 +411,9 @@ if active_module == "🏆 模块七：世界杯全息狙击终端 (TC主导)":
         if d_tc_365 > 0.05 and d_hk_365 <= 0.03:
             st.error("🌪️ **【剧本一：大陆情绪陷阱】** 365与马会保持冷静，体彩利用球迷情绪单方面疯狂造热！凡体彩大幅降水项全部为诱捕毒饵！")
         elif d_hk_365 > 0.05 and d_tc_365 <= 0.03:
-            st.warning("🦇 **【剧本二：亚洲核心防范】** 马会独家大幅收紧防线，脱离全球精算轨道。极大可能代表亚洲核心内幕意图，跟进马会方向！")
+            st.warning("🦇 **【剧本二：亚洲核心防范】** 马会独家大幅收紧某项赔付敞口，脱离全球精算轨道。极高概率有亚洲内幕资金介入，跟进马会方向！")
         elif d_tc_hk <= 0.025 and d_tc_365 > 0.045:
-            st.info("🚧 **【剧本三：亚洲联合壁垒】** 体彩与马会高度重合，联合对抗365模型。亚洲区庄家真实防范意图明显，该区域项打出概率极高，顺势而为！")
+            st.info("🚧 **【剧本三：亚洲联合壁垒】** 体彩与马会高度重合，联合对抗365模型。本土资金真实防范意图明显，该区域项打出概率极高，顺势而为！")
         elif d_tc_365 <= 0.035 and d_hk_365 <= 0.035:
             st.success("✅ **【剧本四：全息共振】** 三方机构纯概率空间协方差极小，步调完全一致。市场无情绪扭曲，请直接依靠上方 6 大矩阵的数据流速(Delta)自行定夺！")
         else:
