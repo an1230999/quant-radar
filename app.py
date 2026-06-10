@@ -19,9 +19,9 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # 💣 终极核弹级清理缓存
-if "FX2_V_FINAL_M7_PURE_6X" not in st.session_state:
+if "FX2_V_FINAL_M7_PURE_6X_REFINE" not in st.session_state:
     st.session_state.clear()
-    st.session_state["FX2_V_FINAL_M7_PURE_6X"] = True
+    st.session_state["FX2_V_FINAL_M7_PURE_6X_REFINE"] = True
 
 # ================= 2. 🔐 核心防盗门：访问密码 =================
 def check_password():
@@ -81,7 +81,11 @@ def dixon_coles_full_matrix(lambda_, mu_, rho_, is_knockout=False):
     P_col[7, 7] = np.sum(P[7:, 7:])         
     P_col_rounded = np.round(P_col, 4)
     
-    return P_col_rounded
+    p_hw2, p_hw1 = np.sum(np.tril(P_col_rounded, -2)), np.sum(np.diag(P_col_rounded, -1))
+    p_draw, p_au = np.sum(np.diag(P_col_rounded, 0)), np.sum(np.triu(P_col_rounded, 0))
+    cols = [f"客进{i}" for i in range(7)] + ["客进7+"]
+    idx = [f"主进{i}" for i in range(7)] + ["主进7+"]
+    return pd.DataFrame(P_col_rounded, columns=cols, index=idx), round(p_hw2, 4), round(p_hw1, 4), round(p_draw, 4), round(p_au, 4), P_col_rounded
 
 def safe_extract_array(data_list):
     out = []
@@ -191,7 +195,7 @@ active_module = st.sidebar.radio("=== 分析体系 ===", [
 # ==============================================================================
 if active_module == "🏆 模块七：世界杯全息终端 (纯粹6项版)":
     st.header(f"🏆 {current_match} - 纯粹 6 项核心深度刺透终端")
-    st.caption("【战略说明】彻底放弃无用的比分探测。算力全部集中于 胜平负/让球胜平负 这 6 个核心选项。完美融合 EV期望、流速、测谎与三向对冲敞口。")
+    st.caption("【战略说明】算力全部集中于 胜平负/让球胜平负 这 6 个核心选项。完美融合 EV期望、流速、测谎、单项提纯与三向对冲敞口。")
 
     # --- 战场环境约束开关 ---
     st.markdown("### 🎛️ 战场环境干预器")
@@ -258,9 +262,9 @@ if active_module == "🏆 模块七：世界杯全息终端 (纯粹6项版)":
         p_hk_c, p_hk_d = calc_pure_prob_array(hk_c), calc_pure_prob_array(hk_d)
 
         # ==========================================
-        # 板块一：体彩满血版 6项数据显微镜 (完美融合 EV)
+        # 板块一：体彩满血版 6项数据显微镜 (融合 M1/M3)
         # ==========================================
-        st.markdown("### 🔬 核心 6 项体检报告 (流速 + EV切片 + 测谎)")
+        st.markdown("### 🔬 核心 6 项体检报告 (流速 + EV切片 + M1提纯)")
         
         # 1. 动量流速
         d_tc_std = np.round(p_tc_std_d - p_tc_std_c, 4)
@@ -268,8 +272,7 @@ if active_module == "🏆 模块七：世界杯全息终端 (纯粹6项版)":
         deltas = np.concatenate([d_tc_std, d_tc_let])
         
         # 2. EV 切片器核心计算 (原 M3 灵魂融合)
-        xg_h, xg_a = (tg - hcp) / 2, (tg + hcp) / 2
-        P_col_rounded = dixon_coles_full_matrix(xg_h, xg_a, -0.15, is_knockout)
+        _, _, _, _, _, P_col_rounded = dixon_coles_full_matrix((tg - hcp) / 2, (tg + hcp) / 2, -0.15, is_knockout)
         
         p_theo_w = sum(P_col_rounded[i, j] for i in range(8) for j in range(8) if i - j > 0)
         p_theo_d = sum(P_col_rounded[i, j] for i in range(8) for j in range(8) if i - j == 0)
@@ -295,13 +298,28 @@ if active_module == "🏆 模块七：世界杯全息终端 (纯粹6项版)":
         else:
             m1_tags = ["➖ 算分局屏蔽"] * 6
 
+        # 4. 单项热度研判 (M1 顺流提纯器移植)
+        # 适应世界杯深水区的阈值映射
+        z2, z3, z4, z5, z6 = 0.0100, 0.0070, 0.0040, 0.0020, 999.0
+        ranks = pd.Series(deltas).rank(method='min', ascending=False).values 
+        refiner_text = []
+        for i in range(6):
+            r, d, odd = ranks[i], deltas[i], tc_odds_all[i]
+            if pd.isna(d): txt = "➖"
+            elif r == 1: txt = "🌋 史诗级重防" if d >= z2*1.5 else "🌋 绝对防范极值" if d >= z2 else "🔥 首席主防" if d >= z3 else "🟡 相对领跑" if d >= z4 else "📈 微弱榜首" if d >= z5 else "⚪ 虚空榜首"
+            elif d > 0: txt = "💣 史诗级暗盘" if d >= z2*1.5 else "💣 隐蔽杀机" if d >= z2 else "🛡️ 独立重防" if d >= z3 else "📈 顺流吸筹" if d >= z4 else "↗️ 温和介入" if d >= z5 else "⚪ 边缘流入"
+            elif odd >= z6: txt = "🎭 终极恐吓" if d <= -z2*1.5 else "🚧 高赔壁垒" if d <= -z2 else "📉 顺势驱赶" if d <= -z3 else "↘️ 显著退热" if d <= -z4 else "⏬ 微幅流失" if d <= -z5 else "⚪ 自然震荡"
+            else: txt = "🩸 绝望深渊" if d <= -z2*1.5 else "🧊 极限绞杀" if d <= -z2 else "📉 坚决抛弃" if d <= -z3 else "↘️ 显著退热" if d <= -z4 else "⏬ 微幅流失" if d <= -z5 else "⚪ 自然震荡"
+            refiner_text.append(txt)
+
         df_6x = pd.DataFrame({
-            "体彩选项": ["标盘-主胜", "标盘-平局", "标盘-客胜", "让球-胜", "让球-平", "让球-负"],
+            "选项": ["主胜", "平局", "客胜", "让球胜", "让球平", "让球负"],
             "初盘纯率": np.concatenate([p_tc_std_c, p_tc_let_c]),
             "临场纯率": np.concatenate([p_tc_std_d, p_tc_let_d]),
             "流速(Δ)": deltas,
             "理论概率(泊松)": np.round(intl_prob_all, 4),
             "体彩期望(EV)": ev_vals,
+            "单项热度研判": refiner_text,
             "EV 价值定性": ev_tags,
             "合成偏差(M1)": m1_tags
         })
@@ -530,18 +548,12 @@ elif active_module == "🎫 模块三：高阶工具 (DC矩阵)":
     xg_h, xg_a = (tg - hcp) / 2, (tg + hcp) / 2
     if xg_h < 0 or xg_a < 0: st.error("⚠️ 预期进球为负，请检查盘口！")
     else:
-        P_col_rounded = dixon_coles_full_matrix(xg_h, xg_a, rho)
-        p_hw2, p_hw1 = np.sum(np.tril(P_col_rounded, -2)), np.sum(np.diag(P_col_rounded, -1))
-        p_draw, p_au = np.sum(np.diag(P_col_rounded, 0)), np.sum(np.triu(P_col_rounded, 0))
-        cols = [f"客进{i}" for i in range(7)] + ["客进7+"]
-        idx = [f"主进{i}" for i in range(7)] + ["主进7+"]
-        df_m = pd.DataFrame(P_col_rounded, columns=cols, index=idx)
-        
+        df_m, ph2, ph1, pdr, pau, P_col_rounded = dixon_coles_full_matrix(xg_h, xg_a, rho)
         tab1, tab2 = st.tabs(["🧮 DC 进球矩阵", "✂️ 体彩 EV 切片器"])
         with tab1:
             rc1, rc2, rc3, rc4 = st.columns(4)
-            rc1.metric("DC 大胜(赢2+)", f"{p_hw2:.4f}"); rc2.metric("DC 恰赢1球", f"{p_hw1:.4f}")
-            rc3.metric("DC 平局", f"{p_draw:.4f}"); rc4.metric("DC 客不败", f"{p_au:.4f}")
+            rc1.metric("DC 大胜(赢2+)", f"{ph2:.4f}"); rc2.metric("DC 恰赢1球", f"{ph1:.4f}")
+            rc3.metric("DC 平局", f"{pdr:.4f}"); rc4.metric("DC 客不败", f"{pau:.4f}")
             st.dataframe(df_m.style.format("{:.4f}"), use_container_width=True)
 
         with tab2:
