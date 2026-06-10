@@ -21,10 +21,10 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 💣 终极核弹级清理：彻底粉碎浏览器里旧版本残留的脏数据（比如 'None' 字符串）
-if "FX2_V_FINAL_M7_CLEAN_CACHE" not in st.session_state:
+# 💣 终极核弹级清理：彻底粉碎浏览器里旧版本残留的脏数据
+if "FX2_V_FINAL_M7_CLEAN_CACHE2" not in st.session_state:
     st.session_state.clear()
-    st.session_state["FX2_V_FINAL_M7_CLEAN_CACHE"] = True
+    st.session_state["FX2_V_FINAL_M7_CLEAN_CACHE2"] = True
 
 if "ai_signals" not in st.session_state:
     st.session_state["ai_signals"] = {"M1": None, "M3": None, "M4": None, "M5": None, "M7": None}
@@ -106,8 +106,6 @@ def safe_extract_array(data_list):
 # ================= 4. 🌟 终极钛合金防闪退矩阵构建器 =================
 def safe_number_input(label, state_key, default_val, format="%.4f", step=0.0010):
     wid_key = "wid_" + state_key
-    
-    # 🛡️ 强制数据清洗：防止旧缓存里的 'None' 字符串毒害系统
     raw_val = st.session_state.get(state_key, default_val)
     try:
         clean_val = float(raw_val)
@@ -120,7 +118,7 @@ def safe_number_input(label, state_key, default_val, format="%.4f", step=0.0010)
     return st.number_input(label, value=clean_val, format=format, step=step, key=wid_key, on_change=cb)
 
 def render_odds_grid(module_key, match_id, wl, options, col_names, init_data):
-    st.markdown(f"### 📥 {wl} 录入")
+    st.markdown(f"### 📥 {wl}")
     num_cols = len(col_names)
     grid_cols = st.columns([1.5] + [1] * num_cols)
     grid_cols[0].markdown("**选项**")
@@ -134,7 +132,6 @@ def render_odds_grid(module_key, match_id, wl, options, col_names, init_data):
             state_key = f"{module_key}_{match_id}_{wl}_r{i}_c{j}"
             wid_key = f"wid_{state_key}"
             
-            # 🛡️ 强制数据清洗：消灭缓存里的 'None' 等一切异形数据
             raw_val = st.session_state.get(state_key, init_data[i][j])
             try:
                 clean_val = float(raw_val)
@@ -204,7 +201,7 @@ active_module = st.sidebar.radio("=== 分析体系 ===", [
 # ==============================================================================
 if active_module == "🏆 模块七：世界杯全息狙击终端 (TC主导)":
     st.header(f"🏆 {current_match} - 体彩绝对主导·世界杯全息中控台")
-    st.caption("【战略变更说明】本模块一切基底运算、流速分析与异常探测，均以中国体彩(TC)为主视角，365/马会提供外维引力锚定。功能不减，维度更深。")
+    st.caption("【战略变更说明】本模块一切基底运算、流速分析与异常探测，均以中国体彩(TC)为主视角，365/马会提供外维引力锚定。")
 
     # --- 战场环境约束开关 ---
     st.markdown("### 🎛️ 世界杯战场环境约束")
@@ -234,15 +231,17 @@ if active_module == "🏆 模块七：世界杯全息狙击终端 (TC主导)":
     st.info("📌 **外维对冲数据池 (365 & 马会)**：用于执行 M4 三向敞口对冲 与 M5 空间共识复核。")
     col_in1, col_in2 = st.columns(2)
     with col_in1:
-        res_m7_365 = render_odds_grid("m7_365", current_match, "365 全球基底 (胜/平/负)", ["365 标盘"], ["初盘", "临场"], [[2.00, 1.95], [3.40, 3.50], [3.60, 3.80]])
+        # 【BUG FIX】将365输入框修复为完整的 胜平负 3行
+        res_m7_365 = render_odds_grid("m7_365", current_match, "365 全球基底 (胜/平/负)", ["主胜", "平局", "客胜"], ["初盘", "临场"], [[2.00, 1.95], [3.40, 3.50], [3.60, 3.80]])
     with col_in2:
-        res_m7_hk = render_odds_grid("m7_hk", current_match, "马会 亚洲基底 (胜/平/负)", ["马会 标盘"], ["初盘", "临场"], [[1.95, 1.90], [3.20, 3.30], [3.50, 3.70]])
+        # 【BUG FIX】将马会输入框修复为完整的 胜平负 3行
+        res_m7_hk = render_odds_grid("m7_hk", current_match, "马会 亚洲基底 (胜/平/负)", ["主胜", "平局", "客胜"], ["初盘", "临场"], [[1.95, 1.90], [3.20, 3.30], [3.50, 3.70]])
         
     st.markdown("---")
     st.markdown("### 🔭 体彩异常设防比分扫描器")
     st.caption("输入你认为最可能爆冷的几个核心比分，结合体彩赔率进行极限防线反套。")
     score_opts = ["1-0", "0-0", "1-1", "2-1", "0-1", "2-0"]
-    res_m7_scores = render_odds_grid("m7_scores", current_match, "核心比分 体彩临场赔率", ["体彩赔率"], score_opts, [[7.0, 9.0, 6.5, 8.0, 10.0, 9.5]])
+    res_m7_scores = render_odds_grid("m7_scores", current_match, "核心比分 体彩临场赔率录入", ["体彩赔率"], score_opts, [[7.0, 9.0, 6.5, 8.0, 10.0, 9.5]])
     
     calc_key_m7 = f"m7_calc_{current_match}"
     if calc_key_m7 not in st.session_state: st.session_state[calc_key_m7] = False
@@ -264,11 +263,11 @@ if active_module == "🏆 模块七：世界杯全息狙击终端 (TC主导)":
         tc_std_d, tc_let_d = tc_d_raw[0:3], tc_d_raw[3:6]
         
         # 365 和 HK 的标盘数据
-        b365_c = np.array([res_m7_365["初盘"][0], res_m7_365["初盘"][1], res_m7_365["初盘"][2]])
-        b365_d = np.array([res_m7_365["临场"][0], res_m7_365["临场"][1], res_m7_365["临场"][2]])
+        b365_c = safe_extract_array(res_m7_365["初盘"])
+        b365_d = safe_extract_array(res_m7_365["临场"])
         
-        hk_c = np.array([res_m7_hk["初盘"][0], res_m7_hk["初盘"][1], res_m7_hk["初盘"][2]])
-        hk_d = np.array([res_m7_hk["临场"][0], res_m7_hk["临场"][1], res_m7_hk["临场"][2]])
+        hk_c = safe_extract_array(res_m7_hk["初盘"])
+        hk_d = safe_extract_array(res_m7_hk["临场"])
         
         # 计算各方纯净率 (锁定 4 位小数)
         p_tc_std_c, p_tc_std_d = calc_pure_prob_array(tc_std_c), calc_pure_prob_array(tc_std_d)
