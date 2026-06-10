@@ -21,9 +21,10 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-if "FX2_V_FINAL_M7_TC_FIX" not in st.session_state:
+# 💣 终极核弹级清理：彻底粉碎浏览器里旧版本残留的脏数据（比如 'None' 字符串）
+if "FX2_V_FINAL_M7_CLEAN_CACHE" not in st.session_state:
     st.session_state.clear()
-    st.session_state["FX2_V_FINAL_M7_TC_FIX"] = True
+    st.session_state["FX2_V_FINAL_M7_CLEAN_CACHE"] = True
 
 if "ai_signals" not in st.session_state:
     st.session_state["ai_signals"] = {"M1": None, "M3": None, "M4": None, "M5": None, "M7": None}
@@ -102,12 +103,21 @@ def safe_extract_array(data_list):
             out.append(0.0)
     return np.array(out, dtype=float)
 
+# ================= 4. 🌟 终极钛合金防闪退矩阵构建器 =================
 def safe_number_input(label, state_key, default_val, format="%.4f", step=0.0010):
     wid_key = "wid_" + state_key
-    if state_key not in st.session_state: st.session_state[state_key] = default_val
+    
+    # 🛡️ 强制数据清洗：防止旧缓存里的 'None' 字符串毒害系统
+    raw_val = st.session_state.get(state_key, default_val)
+    try:
+        clean_val = float(raw_val)
+        if math.isnan(clean_val): clean_val = float(default_val)
+    except:
+        clean_val = float(default_val)
+    st.session_state[state_key] = clean_val
+    
     def cb(): st.session_state[state_key] = st.session_state[wid_key]
-    if wid_key not in st.session_state: st.session_state[wid_key] = st.session_state[state_key]
-    return st.number_input(label, value=st.session_state[wid_key], format=format, step=step, key=wid_key, on_change=cb)
+    return st.number_input(label, value=clean_val, format=format, step=step, key=wid_key, on_change=cb)
 
 def render_odds_grid(module_key, match_id, wl, options, col_names, init_data):
     st.markdown(f"### 📥 {wl} 录入")
@@ -121,12 +131,23 @@ def render_odds_grid(module_key, match_id, wl, options, col_names, init_data):
         cols = st.columns([1.5] + [1] * num_cols)
         cols[0].markdown(f"*{opt}*")
         for j, cname in enumerate(col_names):
-            state_key, wid_key = f"{module_key}_{match_id}_{wl}_r{i}_c{j}", f"wid_{module_key}_{match_id}_{wl}_r{i}_c{j}"
-            if state_key not in st.session_state: st.session_state[state_key] = init_data[i][j]
+            state_key = f"{module_key}_{match_id}_{wl}_r{i}_c{j}"
+            wid_key = f"wid_{state_key}"
+            
+            # 🛡️ 强制数据清洗：消灭缓存里的 'None' 等一切异形数据
+            raw_val = st.session_state.get(state_key, init_data[i][j])
+            try:
+                clean_val = float(raw_val)
+                if math.isnan(clean_val): clean_val = float(init_data[i][j])
+            except:
+                clean_val = float(init_data[i][j])
+            st.session_state[state_key] = clean_val
+            
             def make_cb(s=state_key, w=wid_key):
                 def cb(): st.session_state[s] = st.session_state[w]
                 return cb
-            val = cols[j+1].number_input(f"隐藏{i}{j}", value=st.session_state.get(state_key, init_data[i][j]), format="%.3f", step=0.05, key=wid_key, on_change=make_cb(), label_visibility="collapsed")
+                
+            val = cols[j+1].number_input(f"隐藏{i}{j}", value=clean_val, format="%.3f", step=0.05, key=wid_key, on_change=make_cb(), label_visibility="collapsed")
             results[cname].append(val)
     return results
 
@@ -134,6 +155,14 @@ def render_odds_grid(module_key, match_id, wl, options, col_names, init_data):
 opts_m1 = ["标盘-胜", "标盘-平", "标盘-负", "让盘-胜", "让盘-平", "让盘-负"]
 cols_m1 = ["初盘", "临场"]
 init_m1 = [[2.45, 2.32], [3.20, 3.20], [2.45, 2.60], [5.50, 5.30], [4.10, 4.00], [1.42, 1.45]]
+
+opts_m2 = ["0球", "1球", "2球", "3球", "4球", "5球", "6球", "7+球", "大球", "小球"]
+cols_m2 = ["初盘(C)", "T-60(J)", "临场(D)"]
+init_m2 = [[15.0, 15.5, 15.5], [5.5, 5.8, 5.9], [3.6, 3.7, 3.8], [3.45, 3.30, 3.10], [4.9, 4.8, 4.7], [8.25, 8.4, 8.50], [15.0, 15.5, 16.0], [22.0, 23.0, 24.0], [0.65, 0.60, 0.50], [1.75, 1.40, 1.15]]
+
+opts_m3 = ["标准盘", "让球盘"]
+cols_m3 = ["胜", "平", "负", "国彩让球数"]
+init_m3 = [[2.32, 3.20, 2.60, 0.0], [5.30, 4.00, 1.45, -1.0]]
 
 opts_m5_g = ["0球", "1球", "2球", "3球", "4球", "5球", "6球", "7+球"]
 cols_m5_new = ["365赔率", "马会赔率", "体彩赔率"]
@@ -205,9 +234,9 @@ if active_module == "🏆 模块七：世界杯全息狙击终端 (TC主导)":
     st.info("📌 **外维对冲数据池 (365 & 马会)**：用于执行 M4 三向敞口对冲 与 M5 空间共识复核。")
     col_in1, col_in2 = st.columns(2)
     with col_in1:
-        res_m7_365 = render_odds_grid("m7_365", current_match, "365 全球基底 (胜/平/负)", ["主胜", "平局", "客胜"], ["初盘", "临场"], [[2.00, 1.95], [3.40, 3.50], [3.60, 3.80]])
+        res_m7_365 = render_odds_grid("m7_365", current_match, "365 全球基底 (胜/平/负)", ["365 标盘"], ["初盘", "临场"], [[2.00, 1.95], [3.40, 3.50], [3.60, 3.80]])
     with col_in2:
-        res_m7_hk = render_odds_grid("m7_hk", current_match, "马会 亚洲基底 (胜/平/负)", ["主胜", "平局", "客胜"], ["初盘", "临场"], [[1.95, 1.90], [3.20, 3.30], [3.50, 3.70]])
+        res_m7_hk = render_odds_grid("m7_hk", current_match, "马会 亚洲基底 (胜/平/负)", ["马会 标盘"], ["初盘", "临场"], [[1.95, 1.90], [3.20, 3.30], [3.50, 3.70]])
         
     st.markdown("---")
     st.markdown("### 🔭 体彩异常设防比分扫描器")
@@ -235,11 +264,11 @@ if active_module == "🏆 模块七：世界杯全息狙击终端 (TC主导)":
         tc_std_d, tc_let_d = tc_d_raw[0:3], tc_d_raw[3:6]
         
         # 365 和 HK 的标盘数据
-        b365_c = safe_extract_array(res_m7_365["初盘"])
-        b365_d = safe_extract_array(res_m7_365["临场"])
+        b365_c = np.array([res_m7_365["初盘"][0], res_m7_365["初盘"][1], res_m7_365["初盘"][2]])
+        b365_d = np.array([res_m7_365["临场"][0], res_m7_365["临场"][1], res_m7_365["临场"][2]])
         
-        hk_c = safe_extract_array(res_m7_hk["初盘"])
-        hk_d = safe_extract_array(res_m7_hk["临场"])
+        hk_c = np.array([res_m7_hk["初盘"][0], res_m7_hk["初盘"][1], res_m7_hk["初盘"][2]])
+        hk_d = np.array([res_m7_hk["临场"][0], res_m7_hk["临场"][1], res_m7_hk["临场"][2]])
         
         # 计算各方纯净率 (锁定 4 位小数)
         p_tc_std_c, p_tc_std_d = calc_pure_prob_array(tc_std_c), calc_pure_prob_array(tc_std_d)
@@ -411,9 +440,9 @@ if active_module == "🏆 模块七：世界杯全息狙击终端 (TC主导)":
         if d_tc_365 > 0.05 and d_hk_365 <= 0.03:
             st.error("🌪️ **【剧本一：大陆情绪陷阱】** 365与马会保持冷静，体彩利用球迷情绪单方面疯狂造热！凡体彩大幅降水项全部为诱捕毒饵！")
         elif d_hk_365 > 0.05 and d_tc_365 <= 0.03:
-            st.warning("🦇 **【剧本二：亚洲核心防范】** 马会独家大幅收紧某项赔付敞口，脱离全球精算轨道。极高概率有亚洲内幕资金介入，跟进马会方向！")
+            st.warning("🦇 **【剧本二：亚洲核心防范】** 马会独家大幅收紧防线，脱离全球精算轨道。极大可能代表亚洲核心内幕意图，跟进马会方向！")
         elif d_tc_hk <= 0.025 and d_tc_365 > 0.045:
-            st.info("🚧 **【剧本三：亚洲联合壁垒】** 体彩与马会高度重合，联合对抗365模型。本土资金真实防范意图明显，该区域项打出概率极高，顺势而为！")
+            st.info("🚧 **【剧本三：亚洲联合壁垒】** 体彩与马会高度重合，联合对抗365模型。亚洲区庄家真实防范意图明显，该区域项打出概率极高，顺势而为！")
         elif d_tc_365 <= 0.035 and d_hk_365 <= 0.035:
             st.success("✅ **【剧本四：全息共振】** 三方机构纯概率空间协方差极小，步调完全一致。市场无情绪扭曲，请直接依靠上方 6 大矩阵的数据流速(Delta)自行定夺！")
         else:
@@ -803,13 +832,21 @@ elif active_module == "🔭 模块五：V15 全息精算引擎":
             cols = st.columns([1.5] + [1] * num_cols)
             cols[0].markdown(f"*{opt}*")
             for j, cname in enumerate(col_names):
-                base_key = f"{module_key}_{match_id}_{wl}_r{i}_c{j}"
-                wid_key = f"w_{base_key}"
-                if base_key not in st.session_state: st.session_state[base_key] = init_data[i][j]
-                def make_cb(b=base_key, w=wid_key):
+                state_key = f"{module_key}_{match_id}_{wl}_r{i}_c{j}"
+                wid_key = f"w_{state_key}"
+                
+                raw_val = st.session_state.get(state_key, init_data[i][j])
+                try:
+                    clean_val = float(raw_val)
+                    if math.isnan(clean_val): clean_val = float(init_data[i][j])
+                except:
+                    clean_val = float(init_data[i][j])
+                st.session_state[state_key] = clean_val
+                
+                def make_cb(b=state_key, w=wid_key):
                     def cb(): st.session_state[b] = st.session_state[w]
                     return cb
-                val = cols[j+1].number_input(f"隐藏{i}{j}", value=st.session_state.get(base_key, init_data[i][j]), format="%.3f", step=0.05, key=wid_key, on_change=make_cb(), label_visibility="collapsed")
+                val = cols[j+1].number_input(f"隐藏{i}{j}", value=clean_val, format="%.3f", step=0.05, key=wid_key, on_change=make_cb(), label_visibility="collapsed")
                 results[cname].append(val)
         return results
 
