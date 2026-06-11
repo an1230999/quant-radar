@@ -18,10 +18,10 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 💣 终极核弹级清理缓存 (修复M3引擎版 + M6/M7终极版)
-if "FX2_V_FINAL_M6_M7_ULTIMATE" not in st.session_state:
+# 💣 终极核弹级清理缓存 (终极修复版)
+if "FX2_V_FINAL_PATCH_V2" not in st.session_state:
     st.session_state.clear()
-    st.session_state["FX2_V_FINAL_M6_M7_ULTIMATE"] = True
+    st.session_state["FX2_V_FINAL_PATCH_V2"] = True
 
 # ================= 2. 🔐 核心防盗门：访问密码 =================
 def check_password():
@@ -257,7 +257,7 @@ if active_module == "🏆 模块七：世界杯全息终端 (微观刺透版)":
         p_hk_c, p_hk_d = calc_pure_prob_array(hk_c), calc_pure_prob_array(hk_d)
 
         # ==========================================
-        # 板块一：体彩满血版 6项数据显微镜 (深度重构)
+        # 板块一：体彩满血版 6项数据显微镜
         # ==========================================
         st.markdown("### 🔬 核心 6 项体检报告 (流速 + EV切片 + 摩擦测谎)")
         
@@ -284,14 +284,14 @@ if active_module == "🏆 模块七：世界杯全息终端 (微观刺透版)":
         
         ev_tags = np.where(pd.isna(ev_vals), "➖", np.where(ev_vals > 0, "🌟 绝对正价值", np.where(ev_vals >= -0.05, "🟢 极度高潜", np.where(ev_vals >= -0.10, "🟡 合理磨损", np.where(ev_vals >= -0.15, "📉 劣势赔付", "🩸 杀猪盘预警")))))
 
-        # 3. 返还率抽水滤镜 (真实降水判定)
+        # 3. 返还率抽水滤镜
         margin_c_std = np.nansum(1.0 / tc_std_c) - 1
         margin_d_std = np.nansum(1.0 / tc_std_d) - 1
         margin_c_let = np.nansum(1.0 / tc_let_c) - 1
         margin_d_let = np.nansum(1.0 / tc_let_d) - 1
         margin_shift = np.concatenate([np.full(3, margin_d_std - margin_c_std), np.full(3, margin_d_let - margin_c_let)])
         
-        # 4. 【微观刺透重构】合成价差摩擦指数 (Friction)
+        # 4. 合成价差摩擦指数 (Friction)
         friction_tags = ["⚪ 动态平衡"] * 6
         if not is_tacit:
             p_tc_d_all = np.concatenate([p_tc_std_d, p_tc_let_d])
@@ -300,19 +300,14 @@ if active_module == "🏆 模块七：世界杯全息终端 (微观刺透版)":
                     fric = p_tc_d_all[i] / intl_prob_all[i] - 1
                     fric = round(fric, 4)
                     
-                    if abs(fric) <= 0.0050:
-                        friction_tags[i] = f"🎯 结构无偏锚定 ({fric:+.4f})"
-                    elif fric > 0.0150:
-                        friction_tags[i] = f"📉 缩水引力设防 ({fric:+.4f})"
-                    elif fric < -0.0150:
-                        friction_tags[i] = f"📈 溢价虚热泡沫 ({fric:+.4f})"
-                    else:
-                        friction_tags[i] = f"⚪ 常规偏差 ({fric:+.4f})"
+                    if abs(fric) <= 0.0050: friction_tags[i] = f"🎯 结构无偏锚定 ({fric:+.4f})"
+                    elif fric > 0.0150: friction_tags[i] = f"📉 缩水引力设防 ({fric:+.4f})"
+                    elif fric < -0.0150: friction_tags[i] = f"📈 溢价虚热泡沫 ({fric:+.4f})"
+                    else: friction_tags[i] = f"⚪ 常规偏差 ({fric:+.4f})"
                     
-                    if i < 3 and tc_let < 0: # 主胜异步撕裂
+                    if i < 3 and tc_let < 0: # 侦测极端的异步异构撕裂
                         fric_let = p_tc_d_all[i+3] / intl_prob_all[i+3] - 1 if intl_prob_all[i+3] > 0 else 0
-                        if fric > 0.02 and fric_let < -0.01:
-                            friction_tags[i] = f"🌪️ 异步异构撕裂 ({fric:+.4f})"
+                        if fric > 0.02 and fric_let < -0.01: friction_tags[i] = f"🌪️ 异步异构撕裂 ({fric:+.4f})"
         else:
             friction_tags = ["➖ 算分局屏蔽"] * 6
 
@@ -328,6 +323,7 @@ if active_module == "🏆 模块七：世界杯全息终端 (微观刺透版)":
             elif odd >= z6: txt = "🎭 终极恐吓" if d <= -z2*1.5 else "🚧 高赔壁垒" if d <= -z2 else "📉 顺势驱赶" if d <= -z3 else "↘️ 显著退热" if d <= -z4 else "⏬ 微幅流失" if d <= -z5 else "⚪ 自然震荡"
             else: txt = "🩸 绝望深渊" if d <= -z2*1.5 else "🧊 极限绞杀" if d <= -z2 else "📉 坚决抛弃" if d <= -z3 else "↘️ 显著退热" if d <= -z4 else "⏬ 微幅流失" if d <= -z5 else "⚪ 自然震荡"
             
+            # 叠加抽水滤镜修饰
             if d > 0.01 and margin_shift[i] < -0.01: txt += " (真实降水)"
             elif d > 0.01 and margin_shift[i] > 0.01: txt += " (虚假升水)"
             refiner_text.append(txt)
@@ -413,6 +409,7 @@ if active_module == "🏆 模块七：世界杯全息终端 (微观刺透版)":
         # ==========================================
         st.markdown("### 🧬 最终防线：态度矢量三角定位 (标盘空间偏度)")
         
+        # 计算 4 位小数的欧氏距离
         d_tc_365 = round(float(np.linalg.norm(np.nan_to_num(p_tc_std_d) - np.nan_to_num(p_365_d))), 4)
         d_hk_365 = round(float(np.linalg.norm(np.nan_to_num(p_hk_d) - np.nan_to_num(p_365_d))), 4)
         d_tc_hk  = round(float(np.linalg.norm(np.nan_to_num(p_tc_std_d) - np.nan_to_num(p_hk_d))), 4)
@@ -444,7 +441,7 @@ elif active_module == "🎲 模块六：365 核心全息约束 (剧本剥离版)
     st.caption("【深度重构版】引入亚欧挤压差、半全场时间动能比及抽水缩表侦测，扒开精算师的微观操盘剧本。")
 
     opts_m6_std = ["主胜", "平局", "客胜"]
-    cols_m6_2 = ["初盘赔率", "临场赔率"]
+    cols_m6_2 = ["初盘", "临场"]
     init_m6_std = [[2.00, 1.90], [3.50, 3.40], [3.60, 4.00]]
 
     opts_m6_ah = ["盘口(主让为负)", "上盘水位", "下盘水位"]
@@ -472,10 +469,11 @@ elif active_module == "🎲 模块六：365 核心全息约束 (剧本剥离版)
     if st.session_state[calc_key_m6]:
         st.markdown("---")
         try:
-            std_c, std_d = safe_extract_array(res_m6_std['初盘赔率']), safe_ext_m6(res_m6_std['临场赔率'])
-            ah_c, ah_d = safe_extract_array(res_m6_ah['初盘赔率']), safe_ext_m6(res_m6_ah['临场赔率'])
-            eh_c, eh_d = safe_extract_array(res_m6_eh['初盘赔率']), safe_ext_m6(res_m6_eh['临场赔率'])
-            ht_c, ht_d = safe_extract_array(res_m6_htft['初盘赔率']), safe_ext_m6(res_m6_htft['临场赔率'])
+            # 🛡️ 修复核心：统一提取 "初盘" 和 "临场"，完美规避字典键异常
+            std_c, std_d = safe_extract_array(res_m6_std['初盘']), safe_extract_array(res_m6_std['临场'])
+            ah_c, ah_d = safe_extract_array(res_m6_ah['初盘']), safe_extract_array(res_m6_ah['临场'])
+            eh_c, eh_d = safe_extract_array(res_m6_eh['初盘']), safe_extract_array(res_m6_eh['临场'])
+            ht_c, ht_d = safe_extract_array(res_m6_htft['初盘']), safe_extract_array(res_m6_htft['临场'])
             
             p_std_c, p_std_d = calc_pure_prob_array(std_c), calc_pure_prob_array(std_d)
             p_ht_c, p_ht_d = calc_pure_prob_array(ht_c), calc_pure_prob_array(ht_d)
@@ -540,44 +538,44 @@ elif active_module == "🎲 模块六：365 核心全息约束 (剧本剥离版)
                 if category == 'std':
                     if opt_name == "主胜":
                         if delta > 0.015:
-                            if delta_ah_up <= -0.015: return "🚨 【诱导陷阱】标盘造热但亚盘暗撤，赢球输盘或爆冷！"
+                            if delta_ah_up <= -0.015: return "🚨 【诱导陷阱】标盘疯狂造热主队，但亚盘暗中撤防，极大概率赢球输盘或爆冷！"
                             if delta_ah_up > 0.015 and delta_eh_d > 0.02: return "🚨 【刚好赢一球壁垒】主胜/亚盘齐热，但欧让平防守激增！剧毒，防主队1球小胜输盘。"
-                            return "💎 【黄金共振】标亚同步极限施压，强力看好。"
+                            return "💎 【黄金共振】标亚同步极限施压，真实核心防守项，强力看好。"
                         if delta < -0.015:
-                            if delta_ah_up > 0.015: return "🕳️ 【深水反诱】标盘遭弃亚盘升水，坑在下盘！"
-                            return "📉 【真实抛弃】资金随势出逃。"
+                            if delta_ah_up > 0.015: return "🕳️ 【深水反诱】标盘遭弃但亚盘诡异升水，庄家在下盘挖坑！"
+                            return "📉 【真实抛弃】资金随势出逃，机构不再防守此项。"
                     elif opt_name == "平局":
-                        if delta > 0.015 and delta_std_w < -0.01: return "🚧 【冷平防线】庄家被迫拉高平局防范底线。"
+                        if delta > 0.015 and delta_std_w < -0.01: return "🚧 【冷平设防】主胜退潮资金大量涌入平局，庄家被迫拉高平局防线。"
                     elif opt_name == "客胜":
-                        if delta > 0.02 and delta_std_w < -0.02: return "⚡ 【反转剧本】主胜崩塌，警惕客队爆冷反杀！"
+                        if delta > 0.02 and delta_std_w < -0.02: return "⚡ 【反转剧本】主胜崩塌，客胜强势吸筹，警惕客队爆冷反杀！"
 
                 elif category == 'ah':
                     if opt_name == "上盘水位":
-                        if delta > 0.015 and delta_std_w <= -0.015: return "☠️ 【深水诱捕】强拉亚盘制造信心，标盘暴跌，骗筹上盘！"
-                        if delta < -0.015 and delta_std_w > 0.015: return "🌊 【顺流泄洪】全线放水诱买，极难穿盘。"
-                        if delta > 0.02: return "🌋 【阻力飙升】畏惧上盘打穿。"
+                        if delta > 0.015 and delta_std_w <= -0.015: return "☠️ 【深水诱捕】强拉亚盘制造信心，标盘主胜实则暴跌，骗筹上盘！"
+                        if delta < -0.015 and delta_std_w > 0.015: return "🌊 【顺流泄洪】主胜利好下，亚盘全线放水诱买，极难穿盘。"
+                        if delta > 0.02: return "🌋 【阻力飙升】单方面拉高亚盘阻力，庄家畏惧上盘打穿。"
 
                 elif category == 'eh':
                     if "胜" in opt_name:
-                        if delta < -0.015 and delta_std_w > 0.015: return "🚧 【穿盘铁幕】深盘防守暴跌，赢球输盘绝对预警！"
+                        if delta < -0.015 and delta_std_w > 0.015: return "🚧 【穿盘铁幕】主胜大热但深盘防守暴跌，赢球输盘绝对预警！"
                     elif "平" in opt_name:
-                        if delta > 0.02: return "🎯 【精准制导】让平防守大幅收紧，机构严防正好赢一球！"
+                        if delta > 0.02: return "🎯 【精准制导】让平防守大幅收紧，机构严防主队正好赢一球！"
 
                 elif category == 'htft':
                     if opt_name == "胜/胜":
                         if delta_std_w > 0.015 and delta < -0.010 and ht_dw > 0.015: 
-                            return "⏱️ 【时间轴剧本】主胜大热但胜胜遭弃，资金疯抢“平/胜”！真正底牌在下半场！"
-                        if delta > 0.015 and delta_std_w > 0.015: return "⚡ 【闪电战】与标盘高度共振，半场建立不可逆优势。"
+                            return "⏱️ 【时间轴剧本暴露】主胜大热但胜胜遭抛弃，资金疯抢“平/胜”！真正重注底牌在下半场！"
+                        if delta > 0.015 and delta_std_w > 0.015: return "⚡ 【闪电战】与标盘高度共振，看好主队半场直接建立不可逆优势。"
                     elif opt_name == "平/胜":
-                        if delta > 0.015 and delta_std_w > 0.01: return "🔎 【剧本偏移】大势下抢平胜，严防下半场绝杀！"
+                        if delta > 0.015 and delta_std_w > 0.01: return "🔎 【剧本偏移】主胜大势下资金疯抢平胜，严防剧本局或下半场绝杀！"
                     elif opt_name == "平/平":
-                        if delta > 0.02: return "🧊 【极限降温】重防平平，大概率沉闷完场。"
+                        if delta > 0.02: return "🧊 【极限降温】机构重防平平，全场大概率极度沉闷或 0-0 完场。"
 
                 if delta >= 0.03: return "🌋 【极限极值】机构防线严重承压！"
-                if delta >= 0.015: return "📈 【显著流入】"
-                if delta <= -0.03: return "🧊 【极限放水】"
+                if delta >= 0.015: return "📈 【显著流入】盘口出现实质性升温。"
+                if delta <= -0.03: return "🧊 【极限放水】机构彻底开门放水。"
                 if delta <= -0.015: return "📉 【显著流出】"
-                return "⚪ 常规换手"
+                return "⚪ 常规换手波动"
 
             st.markdown("### 📊 365 标盘(1X2) 全息切片")
             df_std_out = []
@@ -792,9 +790,9 @@ elif active_module == "🧬 模块四：异构交叉与零和对冲":
         st.markdown("### 🔍 异构交叉验证：盘口物理边界 vs 泊松数学期望")
         st.info(f"原理：自动提取【模块一：{source_wl}】的让球盘，与【模块三】算出的泊松预期净胜球进行对比。如果让球盘远超数学期望，即为极致诱导！")
         try:
-            ah_val = st.session_state.get(f"m1_hcp_{current_match}_{source_wl}", -1.0)
-            tg_val = st.session_state.get(f"m3_tg_{current_match}", 2.75)
-            hcp_val = st.session_state.get(f"m3_hcp_{current_match}", 0.0)
+            ah_val = float(st.session_state.get(f"m1_hcp_{current_match}_{source_wl}", -1.0))
+            tg_val = float(st.session_state.get(f"m3_tg_{current_match}", 2.75))
+            hcp_val = float(st.session_state.get(f"m3_hcp_{current_match}", 0.0))
             xg_h, xg_a = (tg_val - hcp_val) / 2, (tg_val + hcp_val) / 2
             xg_diff = round(xg_h - xg_a, 4)
             
@@ -803,6 +801,10 @@ elif active_module == "🧬 模块四：异构交叉与零和对冲":
             c2.metric("泊松数学推演 (主队净胜球)", f"{xg_diff}")
             mismatch = round(xg_diff - (-ah_val), 4)
             c3.metric("🌪️ 时空撕裂度 (Mismatch)", f"{mismatch}")
+            
+            if mismatch >= 0.4: st.success("✅ **主队深度价值：** 机构开出的盘口极其保守，但数学期望显示主队碾压，主队极大概率穿盘！")
+            elif mismatch <= -0.4: st.error("🚨 **极致诱杀陷阱：** 机构强行开出深盘造热主队，但数学期望极低，坚决去下盘/客队不败！")
+            else: st.warning("⚖️ **盘理平衡：** 机构开盘与数学期望严丝合缝，没有明显的结构性漏洞。")
         except KeyError:
             st.error(f"⚠️ 请先在【模块一：{source_wl}】和【模块三】中输入盘口数据。")
 
@@ -810,11 +812,13 @@ elif active_module == "🧬 模块四：异构交叉与零和对冲":
         st.markdown("### 🏦 机构真实赔付敞口与暗水探测")
         try:
             d_odds = [
-                st.session_state.get(f"m1_{current_match}_{source_wl}_r0_c1", 2.32),
-                st.session_state.get(f"m1_{current_match}_{source_wl}_r1_c1", 3.20),
-                st.session_state.get(f"m1_{current_match}_{source_wl}_r2_c1", 2.60)
+                float(st.session_state.get(f"m1_{current_match}_{source_wl}_r0_c1", 2.32)),
+                float(st.session_state.get(f"m1_{current_match}_{source_wl}_r1_c1", 3.20)),
+                float(st.session_state.get(f"m1_{current_match}_{source_wl}_r2_c1", 2.60))
             ]
-            d_odds = pd.to_numeric(d_odds, errors='coerce')
+            d_odds = np.array(d_odds, dtype=float)
+            if np.isnan(d_odds).any() or (d_odds <= 0).any(): raise ValueError("Invalid odds")
+            
             implied = 1.0 / d_odds
             margin = np.sum(implied) - 1
             fair_prob = implied / (1 + margin)
@@ -822,8 +826,11 @@ elif active_module == "🧬 模块四：异构交叉与零和对冲":
             
             df_kelly = pd.DataFrame({"赛果": ["主胜", "平局", "客胜"], f"{source_wl}临场赔率": d_odds, "被动抽水率": [f"{margin*100:.2f}%"]*3, "真实概率": np.round(fair_prob, 4), "⚠️ 机构敞口指数": np.round(liability, 4)})
             st.dataframe(df_kelly, hide_index=True, use_container_width=True)
-        except:
-            st.warning(f"⚠️ 请先在【模块一：{source_wl}】确认标盘临场赔率。")
+            max_idx = int(np.argmax(liability))
+            max_res = ["主胜", "平局", "客胜"][max_idx]
+            st.error(f"💣 **暗水警报：** 当前机构对 **【{max_res}】** 的赔付敞口最为敏感，存在防范动作！")
+        except Exception as e:
+            st.warning(f"⚠️ 无法核算敞口，请先在【模块一：{source_wl}】确认标盘临场赔率。 (Debug: {e})")
 
     with tab_c:
         st.markdown("### ⚖️ 荷兰式绝对零和对冲器")
