@@ -18,10 +18,10 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 💣 终极核弹级清理缓存
-if "FX2_V_FINAL_M7_MICROSCOPE" not in st.session_state:
+# 💣 终极核弹级清理缓存 (修复M3引擎版)
+if "FX2_V_FINAL_M7_FIX_M3" not in st.session_state:
     st.session_state.clear()
-    st.session_state["FX2_V_FINAL_M7_MICROSCOPE"] = True
+    st.session_state["FX2_V_FINAL_M7_FIX_M3"] = True
 
 # ================= 2. 🔐 核心防盗门：访问密码 =================
 def check_password():
@@ -81,7 +81,12 @@ def dixon_coles_full_matrix(lambda_, mu_, rho_, is_knockout=False):
     P_col[7, 7] = np.sum(P[7:, 7:])         
     P_col_rounded = np.round(P_col, 4)
     
-    return P_col_rounded
+    # 修复：满血恢复 M3 依赖的统计参数输出
+    p_hw2, p_hw1 = np.sum(np.tril(P_col_rounded, -2)), np.sum(np.diag(P_col_rounded, -1))
+    p_draw, p_au = np.sum(np.diag(P_col_rounded, 0)), np.sum(np.triu(P_col_rounded, 0))
+    cols = [f"客进{i}" for i in range(7)] + ["客进7+"]
+    idx = [f"主进{i}" for i in range(7)] + ["主进7+"]
+    return pd.DataFrame(P_col_rounded, columns=cols, index=idx), round(p_hw2, 4), round(p_hw1, 4), round(p_draw, 4), round(p_au, 4), P_col_rounded
 
 def safe_extract_array(data_list):
     out = []
@@ -264,7 +269,7 @@ if active_module == "🏆 模块七：世界杯全息终端 (微观刺透版)":
         
         # 2. EV 切片器
         xg_h, xg_a = (tg - hcp) / 2, (tg + hcp) / 2
-        P_col_rounded = dixon_coles_full_matrix(xg_h, xg_a, -0.15, is_knockout)
+        _, _, _, _, _, P_col_rounded = dixon_coles_full_matrix(xg_h, xg_a, -0.15, is_knockout)
         
         p_theo_w = sum(P_col_rounded[i, j] for i in range(8) for j in range(8) if i - j > 0)
         p_theo_d = sum(P_col_rounded[i, j] for i in range(8) for j in range(8) if i - j == 0)
