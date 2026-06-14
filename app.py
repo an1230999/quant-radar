@@ -15,13 +15,16 @@ st.markdown("""
     h3 { font-size: 1.1rem; color: #4CAF50; }
     div[role="radiogroup"] { padding-bottom: 10px; border-bottom: 1px solid #444; }
     div[role="radiogroup"] > label { padding-right: 20px; font-weight: bold; }
+    .ai-box { padding: 20px; border-radius: 10px; background-color: #1E1E1E; border-left: 5px solid #E50914; margin-bottom: 20px;}
+    .ai-title { font-size: 1.2rem; font-weight: bold; color: #FFFFFF; margin-bottom: 10px;}
+    .ai-text { font-size: 1rem; color: #E0E0E0; line-height: 1.6;}
     </style>
 """, unsafe_allow_html=True)
 
-# 💣 终极核弹级清理缓存 (终极修复版)
-if "FX2_V_FINAL_PATCH_V2" not in st.session_state:
+# 💣 终极核弹级清理缓存 (修复M3引擎版 + M6/M7终极版)
+if "FX2_V_FINAL_M6_M7_ULTIMATE" not in st.session_state:
     st.session_state.clear()
-    st.session_state["FX2_V_FINAL_PATCH_V2"] = True
+    st.session_state["FX2_V_FINAL_M6_M7_ULTIMATE"] = True
 
 # ================= 2. 🔐 核心防盗门：访问密码 =================
 def check_password():
@@ -195,7 +198,7 @@ active_module = st.sidebar.radio("=== 分析体系 ===", [
 # ==============================================================================
 if active_module == "🏆 模块七：世界杯全息终端 (微观刺透版)":
     st.header(f"🏆 {current_match} - 纯粹 6 项核心深度刺透终端")
-    st.caption("【微观刺透版】摒弃笼统阈值定性，引入 摩擦指数、跨平台断层扫描 及 偏度三角，进行剥洋葱式精算。")
+    st.caption("【微观刺透版】摒弃笼统阈值定性，引入 摩擦指数、跨平台断层扫描 及 定向极值狩猎，进行剥洋葱式精算。")
 
     # --- 战场环境干预器 ---
     st.markdown("### 🎛️ 战场环境干预器")
@@ -257,16 +260,14 @@ if active_module == "🏆 模块七：世界杯全息终端 (微观刺透版)":
         p_hk_c, p_hk_d = calc_pure_prob_array(hk_c), calc_pure_prob_array(hk_d)
 
         # ==========================================
-        # 板块一：体彩满血版 6项数据显微镜
+        # 板块一：体彩满血版 6项数据显微镜 (深度重构)
         # ==========================================
         st.markdown("### 🔬 核心 6 项体检报告 (流速 + EV切片 + 摩擦测谎)")
         
-        # 1. 动量流速
         d_tc_std = np.round(p_tc_std_d - p_tc_std_c, 4)
         d_tc_let = np.round(p_tc_let_d - p_tc_let_c, 4)
         deltas = np.concatenate([d_tc_std, d_tc_let])
         
-        # 2. EV 切片器
         xg_h, xg_a = (tg - hcp) / 2, (tg + hcp) / 2
         _, _, _, _, _, P_col_rounded = dixon_coles_full_matrix(xg_h, xg_a, -0.15, is_knockout)
         
@@ -284,14 +285,12 @@ if active_module == "🏆 模块七：世界杯全息终端 (微观刺透版)":
         
         ev_tags = np.where(pd.isna(ev_vals), "➖", np.where(ev_vals > 0, "🌟 绝对正价值", np.where(ev_vals >= -0.05, "🟢 极度高潜", np.where(ev_vals >= -0.10, "🟡 合理磨损", np.where(ev_vals >= -0.15, "📉 劣势赔付", "🩸 杀猪盘预警")))))
 
-        # 3. 返还率抽水滤镜
         margin_c_std = np.nansum(1.0 / tc_std_c) - 1
         margin_d_std = np.nansum(1.0 / tc_std_d) - 1
         margin_c_let = np.nansum(1.0 / tc_let_c) - 1
         margin_d_let = np.nansum(1.0 / tc_let_d) - 1
         margin_shift = np.concatenate([np.full(3, margin_d_std - margin_c_std), np.full(3, margin_d_let - margin_c_let)])
         
-        # 4. 合成价差摩擦指数 (Friction)
         friction_tags = ["⚪ 动态平衡"] * 6
         if not is_tacit:
             p_tc_d_all = np.concatenate([p_tc_std_d, p_tc_let_d])
@@ -305,13 +304,12 @@ if active_module == "🏆 模块七：世界杯全息终端 (微观刺透版)":
                     elif fric < -0.0150: friction_tags[i] = f"📈 溢价虚热泡沫 ({fric:+.4f})"
                     else: friction_tags[i] = f"⚪ 常规偏差 ({fric:+.4f})"
                     
-                    if i < 3 and tc_let < 0: # 侦测极端的异步异构撕裂
+                    if i < 3 and tc_let < 0:
                         fric_let = p_tc_d_all[i+3] / intl_prob_all[i+3] - 1 if intl_prob_all[i+3] > 0 else 0
                         if fric > 0.02 and fric_let < -0.01: friction_tags[i] = f"🌪️ 异步异构撕裂 ({fric:+.4f})"
         else:
             friction_tags = ["➖ 算分局屏蔽"] * 6
 
-        # 5. M1 顺流资金提纯器 (单项热度)
         z2, z3, z4, z5, z6 = 0.0100, 0.0070, 0.0040, 0.0020, 999.0
         ranks = pd.Series(deltas).rank(method='min', ascending=False).values 
         refiner_text = []
@@ -323,7 +321,6 @@ if active_module == "🏆 模块七：世界杯全息终端 (微观刺透版)":
             elif odd >= z6: txt = "🎭 终极恐吓" if d <= -z2*1.5 else "🚧 高赔壁垒" if d <= -z2 else "📉 顺势驱赶" if d <= -z3 else "↘️ 显著退热" if d <= -z4 else "⏬ 微幅流失" if d <= -z5 else "⚪ 自然震荡"
             else: txt = "🩸 绝望深渊" if d <= -z2*1.5 else "🧊 极限绞杀" if d <= -z2 else "📉 坚决抛弃" if d <= -z3 else "↘️ 显著退热" if d <= -z4 else "⏬ 微幅流失" if d <= -z5 else "⚪ 自然震荡"
             
-            # 叠加抽水滤镜修饰
             if d > 0.01 and margin_shift[i] < -0.01: txt += " (真实降水)"
             elif d > 0.01 and margin_shift[i] > 0.01: txt += " (虚假升水)"
             refiner_text.append(txt)
@@ -355,7 +352,6 @@ if active_module == "🏆 模块七：世界杯全息终端 (微观刺透版)":
         shift_365 = calc_liab_shift(p_365_c, b365_c, p_365_d, b365_d)
         shift_hk = calc_liab_shift(p_hk_c, hk_c, p_hk_d, hk_d)
         
-        # 量价背离与对冲溢出追踪
         m4_alerts = ["⚪ 常规博弈"] * 3
         tc_forms = ["➖"] * 3
         b365_forms = ["➖"] * 3
@@ -364,26 +360,22 @@ if active_module == "🏆 模块七：世界杯全息终端 (微观刺透版)":
         for i in range(3):
             if pd.isna(shift_tc[i]): continue
             
-            # 体彩量价形态
             tc_delta_odd = tc_std_d[i] - tc_std_c[i]
             if shift_tc[i] > 0.02 and tc_delta_odd >= -0.01: tc_forms[i] = "🩸 量增价稳/升 (绞肉机)"
             elif shift_tc[i] < -0.02 and tc_delta_odd < -0.05: tc_forms[i] = "👻 量缩价跌 (幽灵造热)"
             elif shift_tc[i] > 0.02 and tc_delta_odd < -0.05: tc_forms[i] = "🛡️ 量增价跌 (真实铁壁)"
             else: tc_forms[i] = "⚪ 常规换手"
 
-            # 365量价形态
             b365_delta_odd = b365_d[i] - b365_c[i]
             if shift_365[i] > 0.02 and b365_delta_odd >= 0: b365_forms[i] = "🎣 高赔吸筹 (拒防)"
             elif shift_365[i] > 0.02 and b365_delta_odd < 0: b365_forms[i] = "🛡️ 同步重防"
             elif shift_365[i] < -0.01 and b365_delta_odd < 0: b365_forms[i] = "👻 幽灵引流"
             else: b365_forms[i] = "⚪ 静止/中立"
 
-            # 马会底线形态
             if shift_hk[i] < -0.03: hk_forms[i] = "🧊 极限退守"
             elif shift_hk[i] > 0.03: hk_forms[i] = "🦇 内幕重防"
             else: hk_forms[i] = "⚪ 未触发预警"
             
-            # 全局资金链定性
             if "绞肉机" in tc_forms[i] and "高赔" in b365_forms[i]:
                 m4_alerts[i] = "☠️ 【全球联合绞杀】体彩设下绞肉机，外围365拒防且开高赔接盘。此项必死！"
             elif shift_tc[i] > 0.035 and shift_hk[i] < 0.005:
@@ -405,33 +397,47 @@ if active_module == "🏆 模块七：世界杯全息终端 (微观刺透版)":
         st.dataframe(df_m4, hide_index=True, use_container_width=True)
 
         # ==========================================
-        # 板块三：三极管空间拓扑探测 (态度矢量三角定位)
+        # 板块三：三极管空间拓扑探测 (定向刺透版)
         # ==========================================
-        st.markdown("### 🧬 最终防线：态度矢量三角定位 (标盘空间偏度)")
+        st.markdown("### 🧬 最终防线：三方态度定向雷达 (标盘空间偏度)")
         
-        # 计算 4 位小数的欧氏距离
-        d_tc_365 = round(float(np.linalg.norm(np.nan_to_num(p_tc_std_d) - np.nan_to_num(p_365_d))), 4)
-        d_hk_365 = round(float(np.linalg.norm(np.nan_to_num(p_hk_d) - np.nan_to_num(p_365_d))), 4)
-        d_tc_hk  = round(float(np.linalg.norm(np.nan_to_num(p_tc_std_d) - np.nan_to_num(p_hk_d))), 4)
+        diff_tc_365 = p_tc_std_d - p_365_d
+        diff_hk_365 = p_hk_d - p_365_d
+        
+        tc_max_idx = np.nanargmax(diff_tc_365)
+        tc_min_idx = np.nanargmin(diff_tc_365)
+        hk_max_idx = np.nanargmax(diff_hk_365)
+        hk_min_idx = np.nanargmin(diff_hk_365)
+        
+        res_names = ["主胜", "平局", "客胜"]
         
         col_t1, col_t2, col_t3 = st.columns(3)
-        col_t1.metric("体彩情绪偏离度 (vs 365)", f"{d_tc_365:.4f}")
-        col_t2.metric("马会风控偏离度 (vs 365)", f"{d_hk_365:.4f}")
-        col_t3.metric("亚洲内部断层 (体彩 vs 马会)", f"{d_tc_hk:.4f}")
+        col_t1.error(f"🚨 **体彩极限造热项：【{res_names[tc_max_idx]}】**\n\n(高出365基准 {diff_tc_365[tc_max_idx]*100:+.2f}%)")
+        col_t2.warning(f"🦇 **马会内幕重防项：【{res_names[hk_max_idx]}】**\n\n(高出365基准 {diff_hk_365[hk_max_idx]*100:+.2f}%)")
         
-        st.markdown("#### 📝 高阶精算拓扑底牌定性：")
-        
-        if d_tc_365 <= 0.0150 and d_hk_365 <= 0.0150:
-            st.success("🎯 **【全息绝对收敛】** 三方处于完美的数学共识状态，无做局干扰。市场效率极高，完全拼底层泊松 EV 的硬实力。")
-        elif d_tc_365 > 0.0400 and d_hk_365 <= 0.0200:
-            st.error("🌋 **【体彩单向撕裂】** 马会和365死死贴合，体彩彻底脱离全球足球精算轨道！若上方量价矩阵提示体彩陷阱，该项即为绞肉机死穴！")
-        elif d_tc_hk <= 0.0200 and d_tc_365 > 0.0350:
-            st.info("🛡️ **【区域防守壁垒】** 体彩和马会概率高度重合，联合对抗欧洲大盘。亚洲风控集团达成内幕共识，无脑跟进亚洲防御方向。")
-        elif d_tc_365 > 0.0400 and d_hk_365 > 0.0400 and d_tc_hk > 0.0400:
-            st.warning("⚡ **【异步三轨博弈】** 全球、亚洲、大陆三个资本池彻底决裂。赔率系统濒临失效，存在极大的冷门暴击或套利空间，谨慎入局！")
+        # 寻找全球盲区 (三者均低或没人防守的项)
+        blind_spot = [i for i in range(3) if diff_tc_365[i] < -0.01 and diff_hk_365[i] < -0.01]
+        if blind_spot:
+            col_t3.success(f"🕳️ **全球共识盲区：【{res_names[blind_spot[0]]}】**\n\n(亚洲双雄全部退守)")
         else:
-            st.markdown("> *当前空间张力处于常规摩擦状态，请聚焦上方 6 大选项的摩擦指数与量价矩阵进行微观研判。*")
-
+            col_t3.info(f"⚪ **无明显全盘盲区**")
+        
+        st.markdown("#### 📝 高阶精算拓扑执行指令：")
+        
+        max_tc_val = diff_tc_365[tc_max_idx]
+        max_hk_val = diff_hk_365[hk_max_idx]
+        min_hk_val = diff_hk_365[hk_min_idx]
+        
+        if max_tc_val > 0.0400 and diff_hk_365[tc_max_idx] <= 0.0100:
+            st.error(f"☠️ **致命诱捕确诊：** 体彩在【{res_names[tc_max_idx]}】单方面疯狂造热（高出大盘 {max_tc_val*100:.1f}%），但马会与365在该项上毫无防备。这是标准的吸筹杀猪盘！\n\n👉 **执行指令：绝对放弃【{res_names[tc_max_idx]}】！首选另外两项防大冷。**")
+        elif max_hk_val > 0.0350 and diff_tc_365[hk_max_idx] <= 0.0150:
+            st.warning(f"🦇 **亚洲风控独立阻击：** 马会无视外部大势，独家将【{res_names[hk_max_idx]}】的防守力度拉满，极大可能截获内幕情报！\n\n👉 **执行指令：高度警惕剧本局！本场重防【{res_names[hk_max_idx]}】，可做核心博胆。**")
+        elif min_hk_val < -0.0400 and diff_tc_365[hk_min_idx] < -0.0400:
+            st.success(f"🚧 **欧亚联合绞杀：** 体彩与马会在【{res_names[hk_min_idx]}】上达成高度退守共识，彻底开门放水。此项已被全球机构判决死刑。\n\n👉 **执行指令：绝对排除【{res_names[hk_min_idx]}】！资金转移至其他热项。**")
+        elif np.all(np.abs(diff_tc_365) < 0.02) and np.all(np.abs(diff_hk_365) < 0.02):
+            st.info(f"✅ **全息绝对收敛：** 三方处于完美的数学共识状态，无做局干扰。\n\n👉 **执行指令：市场效率极高，完全拼底层泊松 EV 的硬实力，直接参考上方 6 大矩阵。**")
+        else:
+            st.markdown(f"> *🌪️ 资金互相撕裂错乱，机构失去控盘默契。建议：直接放弃本场比赛或轻注防大冷。*")
 
 # ==============================================================================
 # ===================== 🎲 模块六：365 核心全息约束 (剧本剥离版) =====================
@@ -469,7 +475,6 @@ elif active_module == "🎲 模块六：365 核心全息约束 (剧本剥离版)
     if st.session_state[calc_key_m6]:
         st.markdown("---")
         try:
-            # 🛡️ 修复核心：统一提取 "初盘" 和 "临场"，完美规避字典键异常
             std_c, std_d = safe_extract_array(res_m6_std['初盘']), safe_extract_array(res_m6_std['临场'])
             ah_c, ah_d = safe_extract_array(res_m6_ah['初盘']), safe_extract_array(res_m6_ah['临场'])
             eh_c, eh_d = safe_extract_array(res_m6_eh['初盘']), safe_extract_array(res_m6_eh['临场'])
@@ -504,7 +509,7 @@ elif active_module == "🎲 模块六：365 核心全息约束 (剧本剥离版)
             margin_d_ht = np.nansum(1.0 / ht_d) - 1
             margin_diff = margin_d_ht - margin_c_ht
             
-            # 变异系数测算 (四大盘口流速极差)
+            # 变异系数测算
             all_deltas = np.concatenate([np.abs(d_std), np.abs(d_ah), np.abs(d_eh), np.abs(d_ht)])
             max_dev = np.nanmax(all_deltas)
             median_dev = np.nanmedian(all_deltas)
@@ -520,7 +525,7 @@ elif active_module == "🎲 模块六：365 核心全息约束 (剧本剥离版)
             else:
                 st.success("💻 **【机器控盘期】** 四大盘口数学传动正常平稳，无剧烈人工干预痕迹，按纯实力流速处理。")
                 
-            if margin_diff > 0.02: # 抽水突然增加超2%
+            if margin_diff > 0.02: 
                 st.warning(f"🚧 **【极限缩表护盘】** 365临场暴力提升半全场抽水率(+{margin_diff*100:.2f}%)，庄家对该维度失去控盘自信，拒开公平赔率以逼退散户！")
 
             # ----------------------------------------------------
@@ -528,7 +533,7 @@ elif active_module == "🎲 模块六：365 核心全息约束 (剧本剥离版)
             # ----------------------------------------------------
             delta_std_w = d_std[0] if not pd.isna(d_std[0]) else 0
             delta_ah_up = d_ah[0] if not pd.isna(d_ah[0]) else 0
-            delta_eh_d  = d_eh[1] if not pd.isna(d_eh[1]) else 0 # 让平(刚好赢一球)
+            delta_eh_d  = d_eh[1] if not pd.isna(d_eh[1]) else 0 # 让平
             
             ht_ww = d_ht[0] if not pd.isna(d_ht[0]) else 0
             ht_dw = d_ht[3] if not pd.isna(d_ht[3]) else 0
@@ -595,6 +600,8 @@ elif active_module == "🎲 模块六：365 核心全息约束 (剧本剥离版)
                 for i in range(3):
                     df_eh_out.append({"选项": opts_m6_eh[i+1], "初盘纯率": f"{p_eh_c[i]:.4f}", "临场纯率": f"{p_eh_d[i]:.4f}", "纯率增量(Δ)": f"{d_eh[i]:.4f}", "深度战术定性": evaluate_m6_item('eh', opts_m6_eh[i+1], d_eh[i], p_eh_c[i], p_eh_d[i])})
                 st.dataframe(pd.DataFrame(df_eh_out), hide_index=True, use_container_width=True)
+            else:
+                st.warning("➖ 欧让盘未录入数据或无开盘，已安全跳过该维度检测。")
 
             st.markdown("### ⏱️ 365 半/全场剧本 切片")
             df_ht_out = []
