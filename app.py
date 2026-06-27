@@ -319,7 +319,7 @@ if active_module == "🎯 模块七：全息连通器·深盘猎杀终端 (V30)"
             for i in range(6):
                 if p_all_d[i]>0: rmv[i] = round(residuals[i]/p_all_d[i], 4)
 
-            # M3 EV 计算用于融合
+            # M3 EV 计算用于融合 (判定毒药或金矿)
             p_math_std_w = sum(P_mat[h, a] for h in range(8) for a in range(8) if h > a)
             p_math_std_d = sum(P_mat[h, a] for h in range(8) for a in range(8) if h == a)
             p_math_std_l = sum(P_mat[h, a] for h in range(8) for a in range(8) if h < a)
@@ -328,35 +328,49 @@ if active_module == "🎯 模块七：全息连通器·深盘猎杀终端 (V30)"
             p_math_let_l = sum(P_mat[h, a] for h in range(8) for a in range(8) if h - a < -K_int)
             p_math_all = np.round([p_math_std_w, p_math_std_d, p_math_std_l, p_math_let_w, p_math_let_d, p_math_let_l], 4)
             
-            # 使用临时模拟赔率计算EV，若未开售则不计算真实EV
             odds_d_all = np.zeros(6)
             if not is_all_std_closed: odds_d_all[0:3] = std_d
             odds_d_all[3:6] = let_d
             ev_all = np.round(odds_d_all * p_math_all - 1.0, 4)
 
-            # 4. 生成微创大白话
+            # 4. 生成微创大白话与带数值说明的显示列表
             verdicts, scripts, intra = [], [], []
+            lie_r_show, rmv_show = [], []
+            
             for i in range(6):
                 if i < 3 and is_all_std_closed:
                     intra.append("🔒 锁盘")
+                    lie_r_show.append("➖")
+                    rmv_show.append("➖")
                     verdicts.append("🚫 官方未售")
                     scripts.append("底层已自动代入泊松物理纯率作为镜像支点。")
                     continue
 
                 flow, res, r, ev = d_all[i], residuals[i], rmv[i], ev_all[i]
                 
+                # 一阶流速定性
                 if flow > 0.025: intra.append("🔥 主力真金狂买")
                 elif flow < -0.025: intra.append("🕳️ 筹码夺路出逃")
                 else: intra.append("⚪ 散户微幅换手")
+
+                # 数值说明解码：将冰冷的数字翻译为直观预警
+                if res > dyn_thresh: lie_r_show.append(f"{res:+.4f} (🔴虚高造热)")
+                elif res < -dyn_thresh: lie_r_show.append(f"{res:+.4f} (🟢真实筑墙)")
+                else: lie_r_show.append(f"{res:+.4f} (⚪合理容差)")
+
+                if r > 0.04: rmv_show.append(f"{r*100:+.2f}% (🔴致命诱导)")
+                elif r < -0.04: rmv_show.append(f"{r*100:+.2f}% (🟢绝对核心)")
+                else: rmv_show.append(f"{r*100:+.2f}% (⚪常规波动)")
 
                 is_lie = res > dyn_thresh and r > 0.04
                 is_gold = res < -dyn_thresh and r < -0.04
                 is_poison = not pd.isna(ev) and ev < -0.1600
                 is_deep_val = not pd.isna(ev) and ev > 0.0150
 
+                # 终极传动裁决
                 if is_lie:
                     verdicts.append("🚨 镜像畸高 (造热死坑)")
-                    scripts.append(f"【诱杀红线】跨盘概率被虚假拔高({res:+.4f})，精算师克扣赔率制造稳赢假象，泊松期望不支撑，坚决排除。")
+                    scripts.append(f"【诱杀红线】跨盘概率被虚假拔高，精算师克扣赔率制造稳赢假象，泊松期望不支撑，坚决排除。")
                 elif is_gold:
                     if flow > -0.0100:
                         verdicts.append("💎 全息闭环暗水王")
@@ -390,8 +404,8 @@ if active_module == "🎯 模块七：全息连通器·深盘猎杀终端 (V30)"
                 "投注选项": opts_std + opts_let,
                 "临场纯率(Pd)": pd_show_list,
                 "流速动能(一阶)": intra,
-                "连通器残差(Lie_R)": [f"{x:+.4f}" for x in residuals],
-                "变异度(RMV)": [f"{x*100:+.2f}%" for x in rmv],
+                "连通器残差(Lie_R)": lie_r_show,
+                "变异度(RMV)": rmv_show,
                 "传动时空裁决": verdicts,
                 "精算审讯结论": scripts
             })
@@ -415,11 +429,11 @@ if active_module == "🎯 模块七：全息连通器·深盘猎杀终端 (V30)"
             res_main = residuals[0] if K_int<0 else residuals[2]
             
             if flow_main >= 0.035 and abs(res_main) < 0.012:
-                r3.success("定性：🚀 **教科书级物理公平盘 (顺流直冲)**")
+                r3.success("定性：🚀 **教科书级物理公平盘 (顺流直冲)**\n\n**数值解码：** 核心项流速 ≥ 3.5% (主力暴力扫货)，且残差极小 (庄家未做账本抵抗)，量价齐升不设防，顺应大势重锤。")
             elif residuals[3 if K_int<0 else 5] < -0.015:
-                r3.warning("定性：🎁 **底层暗水偷袭局 (去让球端)**")
+                r3.warning("定性：🎁 **底层暗水偷袭局 (去让球端)**\n\n**数值解码：** 底层核心让球防线出现 < -1.5% 的异常负残差，庄家顶着流速强行压低赔率，肉身筑墙保护下盘。")
             else:
-                r3.info("定性：⚖️ **多空精算焦灼对冲局**")
+                r3.info("定性：⚖️ **多空精算焦灼对冲局**\n\n**数值解码：** 全盘残差与流量均未触及极端红线，多空势能处于互相绞杀的稳态，无明显单边碾压或做局破绽。")
 
         except Exception as e:
             st.error("🚨 模块七微创运行异常。")
@@ -617,7 +631,6 @@ elif active_module == "🔥 模块X：全息综合引擎 (M1+M3+M4)":
     with tab_mx_2: render_module_x_ui("中水区", current_match)
     with tab_mx_3: render_module_x_ui("深水区", current_match)
 
-
 # ==============================================================================
 # ===================== ⚔️ 模块一：欧亚大盘体系 (独立版) =====================
 # ==============================================================================
@@ -726,7 +739,6 @@ elif active_module == "⚔️ 模块一：欧亚大盘体系 (独立版)":
     with tab2: render_main_handicap_ui("中水区", current_match)
     with tab3: render_main_handicap_ui("深水区", current_match)
 
-
 # ==============================================================================
 # ===================== ⚽ 模块二：进球数多维风控 =====================
 # ==============================================================================
@@ -759,7 +771,6 @@ elif active_module == "⚽ 模块二：进球数多维风控":
     with tab1: render_goals_ui("浅水区", current_match)
     with tab2: render_goals_ui("中水区", current_match)
     with tab3: render_goals_ui("深水区", current_match)
-
 
 # ==============================================================================
 # ===================== 🎫 模块三：高阶工具 (独立版) =====================
@@ -811,7 +822,6 @@ elif active_module == "🎫 模块三：高阶工具 (独立版)":
                 out_df3 = pd.DataFrame({"投注项": ["标准胜", "标准平", "标准负", "让球胜", "让球平", "让球负"], "推演概率": np.round(intl_prob, 4), "数学EV": ev_vals, "雷达定性": judge})
                 st.dataframe(out_df3.fillna(""), hide_index=True, use_container_width=True)
 
-
 # ==============================================================================
 # ===================== 🧬 模块四：异构交叉与零和对冲 (独立版) =====================
 # ==============================================================================
@@ -861,7 +871,6 @@ elif active_module == "🧬 模块四：异构交叉与零和对冲 (独立版)"
             col_r1.success(f"**买入 选项A：** `{stake_a:.2f}` 元")
             col_r2.success(f"**买入 选项B：** `{stake_b:.2f}` 元")
             if profit > 0: col_r3.info(f"**保底净利润：** `+{profit:.2f}` 元")
-
 
 # ==============================================================================
 # ===================== 🔭 模块五：状态转移与跨盘约束引擎 =====================
