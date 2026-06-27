@@ -19,12 +19,12 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# 💣 终极核弹级清理缓存 (彻底修复死循环Bug)
+# 终极清理缓存防死循环
 if "FX2_V_FINAL_ROLLBACK_V2" not in st.session_state:
     st.session_state.clear()
     st.session_state["FX2_V_FINAL_ROLLBACK_V2"] = True
 
-# ================= 2. 🔐 核心防盗门：访问密码 =================
+# ================= 2. 🔐 核心防盗门：访问密钥 =================
 def check_password():
     if "password_correct" not in st.session_state: st.session_state["password_correct"] = False
     if not st.session_state["password_correct"]:
@@ -45,7 +45,7 @@ if not check_password(): st.stop()
 
 st.title("🏦 FX2 机构级全维量化终端 (大结局至尊版)")
 
-# ================= 3. 核心数学引擎 (强制4位小数精度) =================
+# ================= 3. 核心精算底座 (强制保留4位小数) =================
 def calc_pure_prob_array(arr):
     arr = np.array(arr, dtype=float)
     if pd.isna(arr).any() or (arr <= 0).any():
@@ -103,7 +103,6 @@ def safe_extract_array(data_list):
             out.append(0.0)
     return np.array(out, dtype=float)
 
-# ================= 4. 🌟 终极钛合金防闪退矩阵构建器 =================
 def safe_number_input(label, state_key, default_val, format="%.4f", step=0.0010):
     wid_key = "wid_" + state_key
     raw_val = st.session_state.get(state_key, default_val)
@@ -148,13 +147,52 @@ def render_odds_grid(module_key, match_id, wl, options, col_names, init_data):
             results[cname].append(val)
     return results
 
-# ================= 5. 底座初始参数 =================
+def render_thresholds(mod, match, wl):
+    defs = [0.0100, 0.0070, 0.0040, 0.0020, 999.0, 0.0020] if "深" in wl else [0.0200, 0.0130, 0.0080, 0.0050, 999.0, 0.0050] if "中" in wl else [0.0300, 0.0200, 0.0120, 0.0080, 999.0, 0.0080]
+    with st.expander(f"⚙️ {wl} 专属风控阈值微调 (点击展开)"):
+        cols = st.columns(6)
+        with cols[0]: z2 = safe_number_input("Z2 (红线)", f"{mod}_z2_{match}_{wl}", defs[0])
+        with cols[1]: z3 = safe_number_input("Z3 (显著)", f"{mod}_z3_{match}_{wl}", defs[1])
+        with cols[2]: z4 = safe_number_input("Z4 (警戒)", f"{mod}_z4_{match}_{wl}", defs[2])
+        with cols[3]: z5 = safe_number_input("Z5 (温和)", f"{mod}_z5_{match}_{wl}", defs[3])
+        with cols[4]: z6 = safe_number_input("Z6 (高赔)", f"{mod}_z6_{match}_{wl}", defs[4], format="%.1f", step=1.0)
+        with cols[5]: v  = safe_number_input("T-60加速", f"{mod}_v_{match}_{wl}", defs[5])
+    return z2, z3, z4, z5, z6, v
+
+# 基础数据字典
 opts_m1 = ["标盘-胜", "标盘-平", "标盘-负", "让盘-胜", "让盘-平", "让盘-负"]
 cols_m1 = ["初盘", "临场"]
 init_m1 = [[2.45, 2.32], [3.20, 3.20], [2.45, 2.60], [5.50, 5.30], [4.10, 4.00], [1.42, 1.45]]
 
+opts_m3 = ["标准盘", "让球盘"]
+cols_m3 = ["胜", "平", "负", "国彩让球数"]
+init_m3 = [[2.32, 3.20, 2.60, 0.0], [5.30, 4.00, 1.45, -1.0]]
+
+opts_m5_g = ["0球", "1球", "2球", "3球", "4球", "5球", "6球", "7+球"]
+cols_m5_new = ["365初盘", "365临场", "马会初盘", "马会临场", "体彩初盘", "体彩临场"]
+init_m5_g = [[17.0, 17.0, 15.0, 15.0, 17.0, 17.0], [6.5, 6.0, 5.8, 5.5, 6.5, 6.0], [4.0, 4.0, 3.9, 3.8, 4.0, 3.9], [4.0, 3.8, 3.7, 3.6, 3.65, 3.5], [5.0, 5.0, 4.35, 4.2, 4.25, 4.2], [8.0, 8.5, 6.6, 6.5, 7.0, 7.5], [15.0, 16.0, 11.0, 12.0, 12.0, 13.0], [19.0, 21.0, 16.0, 17.0, 18.0, 20.0]]
+opts_m5_h = ["胜胜", "胜平", "胜负", "平胜", "平平", "平负", "负胜", "负平", "负负"]
+init_m5_h = [[4.3, 4.1, 4.0, 3.8, 3.7, 3.6], [13.0, 13.5, 12.5, 13.0, 13.0, 14.0], [23.0, 25.0, 23.0, 24.0, 26.0, 28.0], [6.5, 6.0, 6.0, 5.8, 6.6, 6.2], [6.0, 5.5, 5.4, 5.2, 5.8, 5.4], [6.0, 6.5, 5.8, 6.2, 6.6, 7.0], [23.0, 25.0, 24.0, 26.0, 28.0, 30.0], [13.0, 13.5, 12.5, 13.0, 13.0, 14.0], [4.0, 3.8, 3.6, 3.5, 3.5, 3.4]]
+
+# ================= 6. 🧭 控制台侧边栏导航 (召回核心！) =================
+matches_list = ["⚽ 比赛 1", "⚽ 比赛 2", "⚽ 比赛 3", "⚽ 比赛 4", "⚽ 比赛 5"]
+st.sidebar.title("🧭 控制台")
+current_match = st.sidebar.radio("🏆 独立沙盒切换：", matches_list, horizontal=True)
+
+active_module = st.sidebar.radio("=== 分析体系 ===", [
+    "🎯 模块七：全息刚性连通器·深盘猎杀终端 (V30)",
+    "🔥 模块X：全息综合引擎 (M1+M3+M4)",
+    "⚽ 模块二：进球与比分·微积分测谎仪 (重构版)",
+    "⚔️ 模块一：欧亚大盘体系 (独立版)",
+    "🎫 模块三：高阶工具 (独立版)",
+    "🧬 模块四：异构交叉与零和对冲 (独立版)",
+    "🔭 模块五：V15 状态转移与跨盘约束引擎",
+    "🎲 模块六：365 核心全息约束 (剧本剥离版)"
+])
+
+
 # ==============================================================================
-# ===================== 🎯 模块七：全息连通器·深盘猎杀终端 (V30) =====================
+# ===================== 🎯 模块七：全息刚性连通器·深盘猎杀终端 (V30) =====================
 # ==============================================================================
 if active_module == "🎯 模块七：全息刚性连通器·深盘猎杀终端 (V30)":
     st.header(f"🎯 {current_match} - V30 全息连通器·深盘猎杀显微镜")
@@ -275,7 +313,9 @@ if active_module == "🎯 模块七：全息刚性连通器·深盘猎杀终端 
             p_math_all = np.round([p_math_std_w, p_math_std_d, p_math_std_l, p_math_let_w, p_math_let_d, p_math_let_l], 4)
             
             odds_d_all = np.zeros(6)
-            if not is_all_std_closed: odds_d_all[0:3] = std_d
+            if not is_all_std_closed: 
+                std_d = safe_extract_array(res_std['临场'])
+                odds_d_all[0:3] = std_d
             odds_d_all[3:6] = let_d
             ev_all = np.round(odds_d_all * p_math_all - 1.0, 4)
 
@@ -368,15 +408,16 @@ if active_module == "🎯 模块七：全息刚性连通器·深盘猎杀终端 
             res_main = residuals[0] if K_int<0 else residuals[2]
             
             if flow_main >= 0.035 and abs(res_main) < 0.012:
-                r3.success("定性：🚀 **教科书级物理公平盘 (顺流直冲)**\n\n**数值解码：** 核心项流速 ≥ 3.5% (主力暴力扫货)，且残差极小 (庄家未做账本抵抗)，量价齐升不设防，顺应大势重锤。")
+                r3.success("定性：🚀 **教科书级物理公平盘 (顺流直冲)**\n\n**数值解码：** 核心项流速 ≥ 3.5% (主力扫货)，且残差极小 (庄家未做抵抗)，量价齐升不设防，顺应大势重锤。")
             elif residuals[3 if K_int<0 else 5] < -0.015:
-                r3.warning("定性：🎁 **底层暗水偷袭局 (去让球端)**\n\n**数值解码：** 底层核心让球防线出现 < -1.5% 的异常负残差，庄家顶着流速强行压低赔率，肉身筑墙保护下盘。")
+                r3.warning("定性：🎁 **底层暗水偷袭局 (去让球端)**\n\n**数值解码：** 底层核心让球防线出现 < -1.5% 的负残差，庄家顶着流速强行压低赔率，肉身筑墙保护下盘。")
             else:
-                r3.info("定性：⚖️ **多空精算焦灼对冲局**\n\n**数值解码：** 全盘残差与流量均未触及极端红线，多空势能处于互相绞杀的稳态，无明显单边碾压或做局破绽。")
+                r3.info("定性：⚖️ **多空精算焦灼对冲局**\n\n**数值解码：** 全盘残差与流量未触及极端红线，多空处于绞杀稳态，无明显做局破绽。")
 
         except Exception as e:
             st.error("🚨 模块七微创运行异常。")
             st.code(traceback.format_exc())
+
 
 # ==============================================================================
 # ===================== 🔥 模块X：全息综合引擎 (M1+M3+M4) =====================
@@ -442,7 +483,7 @@ elif active_module == "🔥 模块X：全息综合引擎 (M1+M3+M4)":
                 s_theo[2], u_theo[2] = prob_c[4] + prob_c[5], prob_d[4] + prob_d[5]
                 s_theo[3], u_theo[3] = prob_c[0] + prob_c[1], prob_d[0] + prob_d[1]
                 s_theo[4], u_theo[4] = prob_c[2] - prob_c[5], prob_d[2] - prob_d[5]
-                s_theo[5], u_theo[5] = prob_c[2] - math_hcp, prob_d[2] - math_hcp
+                s_theo[5], u_theo[5] = prob_c[2] - prob_c[4], prob_d[2] - prob_d[4]
             else:
                 s_theo[0], u_theo[0] = prob_c[0] - prob_c[2], prob_d[0] - prob_d[2]
                 s_theo[1], u_theo[1] = prob_c[1], prob_d[1]
@@ -571,47 +612,19 @@ elif active_module == "🔥 模块X：全息综合引擎 (M1+M3+M4)":
 
 
 # ==============================================================================
-# ===================== ⚔️ 模块一：欧亚大盘体系 (独立版) =====================
-# ==============================================================================
-elif active_module == "⚔️ 模块一：欧亚大盘体系 (独立版)":
-    st.header(f"⚔️ {current_match} - 欧亚大盘体系")
-    tab1, tab2, tab3 = st.tabs(["🟢 浅水区", "🟡 中水区", "🔴 深水区"])
-    
-    def render_legacy_m1(wl, match_id):
-        z2, z3, z4, z5, z6, _ = render_thresholds("legacy_m1", match_id, wl)
-        h_val = safe_number_input("主队亚指让球数", f"m1_legacy_hcp_{match_id}_{wl}", -1.0)
-        res_m1 = render_odds_grid("legacy_m1", match_id, wl, opts_m1, ["初盘", "临场"], init_m1)
-        if st.button(f"🚀 执行 {wl} 独立精算", key=f"btn_legacy_m1_{wl}"):
-            c_odds = pd.to_numeric(res_m1['初盘'], errors='coerce')
-            d_odds = pd.to_numeric(res_m1['临场'], errors='coerce')
-            biao_c, rang_c = calc_pure_prob_array(c_odds[0:3]), calc_pure_prob_array(c_odds[3:6])
-            biao_d, rang_d = calc_pure_prob_array(d_odds[0:3]), calc_pure_prob_array(d_odds[3:6])
-            prob_c, prob_d = np.concatenate([biao_c, rang_c]), np.concatenate([biao_d, rang_d])
-            delta = np.round(prob_d - prob_c, 4)
-            st.write("📊 欧亚大盘分析完成：流速增量 (Delta)", delta)
-
-    with tab1: render_legacy_m1("浅水区", current_match)
-    with tab2: render_legacy_m1("中水区", current_match)
-    with tab3: render_legacy_m1("深水区", current_match)
-
-
-# ==============================================================================
 # ===================== ⚽ 模块二：进球与比分·微积分测谎仪 (重构完全体) =====================
 # ==============================================================================
-elif active_module == "⚽ 模块二：进球数多维风控" or active_module == "⚽ 模块二：进球与比分·微积分测谎仪 (重构版)":
+elif active_module == "⚽ 模块二：进球与比分·微积分测谎仪 (重构版)":
     st.header(f"⚽ {current_match} - 模块二：进球与比分·微积分对账舱")
     st.caption("【拓扑路由完全体】环境数据自动无缝继承自模块X，通过微积分概率质量守恒，穿透0-7球数总期权池与无限动态表格录入的比分细分行权价，极致排雷。")
 
     m2_source_wl = st.radio("📡 选择数据继承源 (同步自模块X大盘参数)：", ["浅水区", "中水区", "深水区"], horizontal=True)
 
-    # 1. 自动穿透继承模块X的数据
     mx_tg_val = st.session_state.get(f"mx_tg_{current_match}_{m2_source_wl}", 2.75)
     mx_hcp_math_val = st.session_state.get(f"mx_hcp_math_{current_match}_{m2_source_wl}", 0.0)
-    mx_hcp_bookie_val = st.session_state.get(f"mx_hcp_bookie_{current_match}_{m2_source_wl}", -1.0)
     mx_k_val = st.session_state.get(f"mx_k_{current_match}_{m2_source_wl}", -1.0)
     mx_rho_val = st.session_state.get(f"mx_rho_{current_match}_{m2_source_wl}", -0.15)
 
-    # 提取大盘临场赔率
     m1_std_w = st.session_state.get(f"mx_{current_match}_{m2_source_wl}_r0_c1", 2.32)
     m1_std_d = st.session_state.get(f"mx_{current_match}_{m2_source_wl}_r1_c1", 3.20)
     m1_std_l = st.session_state.get(f"mx_{current_match}_{m2_source_wl}_r2_c1", 2.60)
@@ -619,7 +632,7 @@ elif active_module == "⚽ 模块二：进球数多维风控" or active_module =
     m1_let_d = st.session_state.get(f"mx_{current_match}_{m2_source_wl}_r4_c1", 4.00)
     m1_let_l = st.session_state.get(f"mx_{current_match}_{m2_source_wl}_r5_c1", 1.45)
 
-    st.info(f"📥 **大盘底座环境穿透成功** | 继承源: {m2_source_wl} | 预期大小球(xG): {mx_tg_val:.2f} | 实际让球数K: {int(mx_k_val)} | 让球盘口赔率: [{m1_let_w:.2f}, {m1_let_d:.2f}, {m1_let_l:.2f}]")
+    st.info(f"📥 **大盘底座环境穿透成功** | 继承源: {m2_source_wl} | 预期大小球(xG): {mx_tg_val:.2f} | 实际让球数K: {int(mx_k_val)} | 让球赔率: [{m1_let_w:.2f}, {m1_let_d:.2f}, {m1_let_l:.2f}]")
 
     st.markdown("### 📥 第一步：0-7球全量总期权池录入")
     opts_m2_goals = ["0球", "1球", "2球", "3球", "4球", "5球", "6球", "7+球"]
@@ -627,10 +640,9 @@ elif active_module == "⚽ 模块二：进球数多维风控" or active_module =
     res_m2_goals = render_odds_grid("m2_g_pool", current_match, "体彩【总进球数】", opts_m2_goals, ["初盘", "临场"], init_m2_goals)
 
     st.markdown("---")
-    st.markdown("### ♾️ 第二步：无限自定义动态比分台 (可自由增删比分对账单)")
+    st.markdown("### ♾️ 第二步：无限自定义动态比分台 (自由增删对账单)")
     st.caption("提示：在表格底部点击 `+ Add row` 可自由无限增加任意一笔要审计的比分，系统将通过拓扑路由公式动态分拣归集。")
 
-    # 初始化比分数据集电器
     if f"m2_editor_df_{current_match}_{m2_source_wl}" not in st.session_state:
         st.session_state[f"m2_editor_df_{current_match}_{m2_source_wl}"] = pd.DataFrame([
             {"比分项 (格式 X-Y)": "1-0", "实际终赔": 7.500},
@@ -650,7 +662,6 @@ elif active_module == "⚽ 模块二：进球数多维风控" or active_module =
     st.write("")
     if st.button("🚀 启动比分与总球数多维拓扑对账引擎", type="primary", use_container_width=True):
         try:
-            # Dixon-Coles 泊松物理基准生成
             xg_h_m2, xg_a_m2 = (mx_tg_val - mx_hcp_math_val)/2.0, (mx_tg_val + mx_hcp_math_val)/2.0
             _, _, _, _, _, P_matrix = dixon_coles_full_matrix(xg_h_m2, xg_a_m2, mx_rho_val)
 
@@ -664,7 +675,6 @@ elif active_module == "⚽ 模块二：进球数多维风控" or active_module =
             p_math_let_l = sum(P_matrix[h, a] for h in range(8) for a in range(8) if h - a < -K_int)
             p_math_all = np.round([p_math_std_w, p_math_std_d, p_math_std_l, p_math_let_w, p_math_let_d, p_math_let_l], 4)
 
-            # 解析大盘临场纯率 (处理未开售/幽灵重构情况)
             is_m2_std_closed = pd.isna(m1_std_w) or m1_std_w <= 0 or pd.isna(m1_std_d) or m1_std_d <= 0
             let_odds_arr = np.array([m1_let_w, m1_let_d, m1_let_l], dtype=float)
             p_let_d_m2 = calc_pure_prob_array(let_odds_arr)
@@ -682,17 +692,15 @@ elif active_module == "⚽ 模块二：进球数多维风控" or active_module =
                     rem_d = max(1.0 - phantom_l, 0.0001)
                     ratio_h_to_d = p_math_all[0] / max((p_math_all[0] + p_math_all[1]), 0.0001)
                     p_std_d_m2 = np.round([rem_d * ratio_h_to_d, rem_d * (1.0 - ratio_h_to_d), phantom_l], 4)
-                margin_m2 = 0.1150 # 锁盘时采用标准中枢水钱率代偿
+                margin_m2 = 0.1150 
             else:
                 std_odds_arr = np.array([m1_std_w, m1_std_d, m1_std_l], dtype=float)
                 p_std_d_m2 = calc_pure_prob_array(std_odds_arr)
                 margin_m2 = np.nansum(1.0 / std_odds_arr) - 1.0
 
-            # 进球数大盘数据解析
             goals_odds_d = safe_extract_array(res_m2_goals['临场'])
             p_goals_d = calc_pure_prob_array(goals_odds_d)
 
-            # 2. 无限伸缩行矩阵分拣循环 (Topology Router Loops)
             score_rows_out = []
             goal_bucket_sums = np.zeros(8)
             macro_biao_sums = {"标胜": 0.0, "标平": 0.0, "标负": 0.0}
@@ -708,44 +716,40 @@ elif active_module == "⚽ 模块二：进球数多维风控" or active_module =
                     X, Y = int(parts[0]), int(parts[1])
                 except: continue
 
-                # 💡 核心三行通用拓扑路由计算组
+                # 核心三行通用比分拓扑路由组
                 G = X - Y
                 G_hcp = G + K_int
                 biao_key = "标胜" if G > 0 else ("标平" if G == 0 else "标负")
                 rang_key = "让胜" if G_hcp > 0 else ("让平" if G_hcp == 0 else "让负")
                 goal_num = min(X + Y, 7)
 
-                # 比分单点纯概率提纯 (基于大盘抽水因子)
-                p_score_pure = (1.0 / odds_val) / (1.0 + margin_m2)
+                p_score_pure = (1.0 / odds_val) / max((1.0 + margin_m2), 0.0001)
                 p_score_pure = round(p_score_pure, 4)
 
-                # 归集进球数与大盘父集抽屉
                 goal_bucket_sums[goal_num] += p_score_pure
                 macro_biao_sums[biao_key] += p_score_pure
                 macro_rang_sums[rang_key] += p_score_pure
 
-                # 获取泊松理论比分纯率用于靶向测谎
                 p_math_score = P_matrix[min(X, 7), min(Y, 7)] if X<8 and Y<8 else 0.0001
                 score_res = round(p_score_pure - p_math_score, 4)
                 score_rmv = round(score_res / max(p_score_pure, 0.0001), 4)
 
-                # 靶向白话单定性
                 if score_res > 0.025 and score_rmv > 0.05:
                     sc_verdict = "🚨 畸高诱捕墙"
-                    sc_desc = "该比分理论发生概率低，但体彩在微观端给出了不合理的反向超额赔付，纯属诱骗买入的虚胖毒饵。"
+                    sc_desc = "发生概率低，但体彩开出了不合理的超额赔付，纯属填仓诱网毒饵。"
                 elif score_res < -0.025 and score_rmv < -0.05:
                     sc_verdict = "🛡️ 核心防波堤"
-                    sc_desc = "发生概率极高，精算师采取了肉身割肉式的暴力扣赔降水阻击，属于机构誓死防守的交割阵眼！"
+                    sc_desc = "发生概率高，精算师割肉降水阻击，属于机构死守的交割阵眼！"
                 else:
-                    sc_verdict = "⚪ 常规对冲中枢"
-                    sc_desc = "赔付率处于完美对冲中枢区间，庄家交由自然实力对冲。"
+                    sc_verdict = "⚪ 常规中枢"
+                    sc_desc = "赔率处于合理博弈区间。"
 
                 score_rows_out.append({
                     "核心比分": score_str,
                     "体彩终赔": f"{odds_val:.2f}",
                     "比分纯率": f"{p_score_pure:.4f}",
-                    "标盘父集": biao_key,
-                    "让球父集": rang_key,
+                    "标盘归属": biao_key,
+                    "让球归属": rang_key,
                     "归属球数": f"{goal_num}球",
                     "子盘口残差": f"{score_res:+.4f}",
                     "期权偏度": sc_verdict,
@@ -755,9 +759,8 @@ elif active_module == "⚽ 模块二：进球数多维风控" or active_module =
             st.markdown("### 📊 看板一：微观行权比分自定义测谎表")
             st.dataframe(pd.DataFrame(score_rows_out), hide_index=True, use_container_width=True)
 
-            # 3. 跨维度微积分总池对账 (Goals Mass Check)
             st.markdown("---")
-            st.markdown("### 🧮 看板二：【总球数期权池】与【细分行权价积分】总对账单")
+            st.markdown("### 🧮 看板二：【总球数期权池】与【细分行权比分】对账单")
             
             goal_checks = []
             for idx, opt_g in enumerate(opts_m2_goals):
@@ -767,14 +770,14 @@ elif active_module == "⚽ 模块二：进球数多维风控" or active_module =
                 g_rmv = round(g_residual / max(p_pool, 0.0001), 4)
 
                 if g_residual > 0.0300:
-                    g_verdict = "🚨 总池空壳抽水 (割肉陷阱)"
-                    g_desc = "总进球数玩法的概率被庄家单边做高（扣低赔率），但底层所有比分却拒不收容此流量！庄家在单向宰杀串关热钱。"
+                    g_verdict = "🚨 总池空壳抽水"
+                    g_desc = "总进球数概率被单边做高，但底层比分拒收流量！庄家单向克扣串关钱。"
                 elif g_residual < -0.0300:
-                    g_verdict = "🎁 细分大点漏网爆破"
-                    g_desc = "比分积分远远挤爆了球数总池！散户未察觉的高赔细分比分里，庄家在大面积偷偷筑墙泄洪！"
+                    g_verdict = "🎁 细分漏网爆破"
+                    g_desc = "比分积分远远挤爆了球数池！散户未注意的高赔比分里，机构在大面积筑墙泄洪。"
                 else:
-                    g_verdict = "⚖️ 微积分守恒完美"
-                    g_desc = "总玩法池与细分期权交割单完美咬合，无明显结构性错配风险。"
+                    g_verdict = "⚖️ 微积分守恒"
+                    g_desc = "总玩法池与细分期权交割单闭环平稳。"
 
                 goal_checks.append({
                     "球数玩法": opt_g,
@@ -787,7 +790,6 @@ elif active_module == "⚽ 模块二：进球数多维风控" or active_module =
                 })
             st.dataframe(pd.DataFrame(goal_checks), hide_index=True, use_container_width=True)
 
-            # 4. 深度宏微观宿敌交叉扫描雷达 (Sub-market Volatility Skew)
             st.markdown("---")
             st.markdown("### 🛰️ 看板三：高级宏微观包含映射雷达")
             
@@ -796,314 +798,95 @@ elif active_module == "⚽ 模块二：进球数多维风控" or active_module =
                 st.markdown("##### 🏟️ 标盘胜平负大盘积分复核")
                 st.write(f"• 临场标盘纯率：[胜 {p_std_d_m2[0]:.4f} | 平 {p_std_d_m2[1]:.4f} | 负 {p_std_d_m2[2]:.4f}]")
                 st.write(f"• 录入比分积分：[胜 {macro_biao_sums['标胜']:.4f} | 平 {macro_biao_sums['标平']:.4f} | 负 {macro_biao_sums['标负']:.4f}]")
-                # 计算比分承载率
                 re_w = macro_biao_sums['标胜']/max(p_std_d_m2[0], 0.0001)
                 if re_w < 0.65 and p_std_d_m2[0] > 0.40:
-                    st.error("🚨 **【皮热骨冷·空壳死局】** 标盘主胜看起来极大，但下方录入的所有主胜核心比分根本没有赔付流量支撑！坚决排除主胜大热！")
+                    st.error("🚨 **【皮热骨冷·空壳死局】** 标盘主胜看起来极大，但下方录入的所有主胜核心比分根本没有流量支撑！排除主胜！")
                 else:
-                    st.success("✅ 大盘指数量价契合度符合正常离散分布。")
+                    st.success("✅ 大盘指数量价契合度符合离散分布。")
 
             with c2_mx:
-                st.markdown("##### 🥅 让球盘受让大一统字典复核")
+                st.markdown("##### 🥅 让球映射大一统字典复核")
                 st.write(f"• 临场让球纯率：[让胜 {p_let_d_m2[0]:.4f} | 让平 {p_let_d_m2[1]:.4f} | 让负 {p_let_d_m2[2]:.4f}]")
-                st.write(f"• 让球映射积分：[让胜 {macro_rang_sums['让胜']:.4f} | 让平 {macro_rang_sums['让平']:.4f} | 让负 {macro_rang_sums['让负']:.4f}]")
+                st.write(f"• 比分路由积分：[让胜 {macro_rang_sums['让胜']:.4f} | 让平 {macro_rang_sums['让平']:.4f} | 让负 {macro_rang_sums['让负']:.4f}]")
                 
-                # 针对用户疑问：解析3球玩法中的让负并联拆解
                 if K_int == -1 and goal_bucket_sums[3] > 0:
                     p_1_2_ratio = sum(float(x["比分纯率"]) for x in score_rows_out if x["核心比分"]=="1-2")
                     p_0_3_ratio = sum(float(x["比分纯率"]) for x in score_rows_out if x["核心比分"]=="0-3")
                     if p_0_3_ratio > 0:
                         skew_ratio = p_1_2_ratio / max(p_0_3_ratio, 0.0001)
-                        st.warning(f"🎯 **【3球让负冷门解耦成功】** 在主让-1下，1-2与0-3均属于让负。当前体彩微观实际赔付比率 1-2 vs 0-3 为 **{skew_ratio:.2f}倍**！若该倍率远低于理论8.0倍，说明精算师在用0-3冷门过度吸筹，诱骗散户去踩1-2的死坑！")
+                        st.warning(f"🎯 **【3球让负解耦成功】** 主让-1下，1-2与0-3均属让负。当前微观实际比率 1-2 vs 0-3 为 **{skew_ratio:.2f}倍**！若远低于理论8.0倍，说明精算师在用0-3冷门吸筹，诱骗散户去踩1-2死坑！")
 
         except Exception as e:
-            st.error("🚨 拓扑微积分引擎运行故障，请检查数据完整度。")
+            st.error("🚨 拓扑微积分引擎故障。")
             st.code(traceback.format_exc())
+
+
+# ==============================================================================
+# ===================== ⚔️ 模块一：欧亚大盘体系 (独立版) =====================
+# ==============================================================================
+elif active_module == "⚔️ 模块一：欧亚大盘体系 (独立版)":
+    st.header(f"⚔️ {current_match} - 欧亚大盘体系")
+    tab1, tab2, tab3 = st.tabs(["🟢 浅水区", "🟡 中水区", "🔴 深水区"])
+    
+    def render_legacy_m1(wl, match_id):
+        h_val = safe_number_input("主队亚指让球数", f"m1_legacy_hcp_{match_id}_{wl}", -1.0)
+        res_m1 = render_odds_grid("legacy_m1", match_id, wl, opts_m1, ["初盘", "临场"], init_m1)
+        if st.button(f"🚀 执行 {wl} 独立精算", key=f"btn_legacy_m1_{wl}"):
+            c_odds = pd.to_numeric(res_m1['初盘'], errors='coerce')
+            d_odds = pd.to_numeric(res_m1['临场'], errors='coerce')
+            biao_c, rang_c = calc_pure_prob_array(c_odds[0:3]), calc_pure_prob_array(c_odds[3:6])
+            biao_d, rang_d = calc_pure_prob_array(d_odds[0:3]), calc_pure_prob_array(d_odds[3:6])
+            prob_c, prob_d = np.concatenate([biao_c, rang_c]), np.concatenate([biao_d, rang_d])
+            delta = np.round(prob_d - prob_c, 4)
+            st.write("📊 欧亚大盘分析完成：流速增量 (Delta)", delta)
+
+    with tab1: render_legacy_m1("浅水区", current_match)
+    with tab2: render_legacy_m1("中水区", current_match)
+    with tab3: render_legacy_m1("深水区", current_match)
+
+
+# ==============================================================================
+# ===================== 🎫 模块三：高阶工具 (独立版) =====================
+# ==============================================================================
+elif active_module == "🎫 模块三：高阶工具 (独立版)":
+    st.header(f"🎫 {current_match} - 高阶价值提纯")
+    c1, c2, c3 = st.columns(3)
+    with c1: tg = safe_number_input("进球盘", f"m3_tg_{current_match}", 2.75)
+    with c2: hcp = safe_number_input("让球盘", f"m3_hcp_{current_match}", 0.0)
+    with c3: rho = safe_number_input("DC系数", f"m3_rho_{current_match}", -0.15)
+    
+    xg_h, xg_a = (tg - hcp) / 2, (tg + hcp) / 2
+    if xg_h >= 0 and xg_a >= 0:
+        df_m, ph2, ph1, pdr, pau, P_col_rounded = dixon_coles_full_matrix(xg_h, xg_a, rho)
+        st.dataframe(df_m.style.format("{:.4f}"), use_container_width=True)
+
+
+# ==============================================================================
+# ===================== 🧬 模块四：异构交叉与零和对冲 (独立版) =====================
+# ==============================================================================
+elif active_module == "🧬 模块四：异构交叉与零和对冲 (独立版)":
+    st.header(f"🧬 {current_match} - 终极异构验证与对冲引擎")
+    c1, c2, c3 = st.columns(3)
+    with c1: total_cap = safe_number_input("💰 资金", f"m4_ind_c_{current_match}", 1000.0, step=100.0)
+    with c2: oa = safe_number_input("赔率 A", f"m4_ind_a_{current_match}", 2.00)
+    with c3: ob = safe_number_input("赔率 B", f"m4_ind_b_{current_match}", 3.00)
+    if oa > 1 and ob > 1:
+        sa = ( (1/oa) / (1/oa + 1/ob) ) * total_cap
+        sb = ( (1/ob) / (1/oa + 1/ob) ) * total_cap
+        st.success(f"买入 A: `{sa:.2f}` 元 | 买入 B: `{sb:.2f}` 元")
 
 
 # ==============================================================================
 # ===================== 🔭 模块五：状态转移与跨盘约束引擎 =====================
 # ==============================================================================
 elif active_module == "🔭 模块五：V15 状态转移与跨盘约束引擎":
-    st.header(f"🔭 {current_match} - V15 状态转移与跨盘约束引擎")
-    st.caption("【高阶重构版】全面引入 质量加权摩擦当量、马尔可夫转移偏度 与 跨盘口物理锁链，降维透视机构内幕。")
-    
-    def get_poisson_pmf(k, lam):
-        if pd.isna(lam) or lam <= 0: return 1.0 if k == 0 else 0.0
-        return math.exp(-lam) * (lam**k) / math.factorial(k)
+    st.header(f"🔭 {current_match} - V15 状态转移引擎")
+    res_m5_g = render_odds_grid("m5g", current_match, "进球数", opts_m5_g, cols_m5_new, init_m5_g)
 
-    def generate_poisson_baselines(tg, hcp):
-        if pd.isna(tg) or pd.isna(hcp): return np.zeros(8), np.zeros(9)
-        xg_h, xg_a = (tg - hcp) / 2, (tg + hcp) / 2
-        goal_probs = np.zeros(8)
-        for i in range(10):
-            for j in range(10):
-                p = get_poisson_pmf(i, xg_h) * get_poisson_pmf(j, xg_a)
-                if i+j < 7: goal_probs[i+j] += p
-                else: goal_probs[7] += p
-                
-        ht_xg_h, ht_xg_a = xg_h * 0.45, xg_a * 0.45
-        sh_xg_h, sh_xg_a = xg_h * 0.55, xg_a * 0.55
-        ht_probs, sh_probs = {"W": 0, "D": 0, "L": 0}, {"W": 0, "D": 0, "L": 0}
-        for i in range(8):
-            for j in range(8):
-                p_ht = get_poisson_pmf(i, ht_xg_h) * get_poisson_pmf(j, ht_xg_a)
-                p_sh = get_poisson_pmf(i, sh_xg_h) * get_poisson_pmf(j, sh_xg_a)
-                if i > j: ht_probs["W"] += p_ht; sh_probs["W"] += p_sh
-                elif i == j: ht_probs["D"] += p_ht; sh_probs["D"] += p_sh
-                else: ht_probs["L"] += p_ht; sh_probs["L"] += p_sh
-                
-        htft_math = [
-            ht_probs["W"] * (sh_probs["W"] + sh_probs["D"]*0.5),
-            ht_probs["W"] * (sh_probs["L"]*0.8 + sh_probs["D"]*0.5),
-            ht_probs["W"] * (sh_probs["L"]*0.2),
-            ht_probs["D"] * sh_probs["W"],
-            ht_probs["D"] * sh_probs["D"],
-            ht_probs["D"] * sh_probs["L"],
-            ht_probs["L"] * (sh_probs["W"]*0.2),
-            ht_probs["L"] * (sh_probs["W"]*0.8 + sh_probs["D"]*0.5),
-            ht_probs["L"] * (sh_probs["L"] + sh_probs["D"]*0.5)
-        ]
-        if np.sum(goal_probs) > 0: goal_probs = goal_probs / np.sum(goal_probs)
-        if np.sum(htft_math) > 0: htft_math = np.array(htft_math) / np.sum(htft_math)
-        return np.round(goal_probs, 4), np.round(htft_math, 4)
-
-    def m5_safe_input(label, base_key, default_val, format="%.2f", step=0.25):
-        wid_key = "w_" + base_key
-        if base_key not in st.session_state: st.session_state[base_key] = default_val
-        def _cb(): st.session_state[base_key] = st.session_state[wid_key]
-        return st.number_input(label, value=st.session_state.get(base_key, default_val), format=format, step=step, key=wid_key, on_change=_cb)
-
-    with st.expander("⚙️ 引擎底座参数 (点击展开设定大盘基准)", expanded=True):
-        cols = st.columns(2)
-        with cols[0]: m5_ou_val = m5_safe_input("大小球基准盘口 (用于跨盘口锁定)", f"m5_ou_{current_match}", 2.50, format="%.2f", step=0.25)
-        with cols[1]: m5_hcp_val = m5_safe_input("亚指让球基准 (用于马尔可夫底座)", f"m5_hcp_{current_match}", -0.50, format="%.2f", step=0.25)
-        
-    tab_g, tab_h = st.tabs(["⚽ 进球数全息矩阵录入", "🔵 半全场时空矩阵录入"])
-    with tab_g: res_m5_g = render_odds_grid("m5g", current_match, "进球数", opts_m5_g, cols_m5_new, init_m5_g)
-    with tab_h: res_m5_h = render_odds_grid("m5h", current_match, "半/全场", opts_m5_h, cols_m5_new, init_m5_h)
-    
-    calc_key_m5 = f"m5_calc_{current_match}"
-    if calc_key_m5 not in st.session_state: st.session_state[calc_key_m5] = False
-    if st.button("🚀 启动 V15 高阶重构精算引擎", type="primary", use_container_width=True, key=f"btn_{calc_key_m5}"): st.session_state[calc_key_m5] = True
-        
-    if st.session_state[calc_key_m5]:
-        st.markdown("---")
-        try:
-            c_365_g, d_365_g = safe_extract_array(res_m5_g['365初盘']), safe_extract_array(res_m5_g['365临场'])
-            c_tc_g,  d_tc_g  = safe_extract_array(res_m5_g['体彩初盘']), safe_extract_array(res_m5_g['体彩临场'])
-            c_tc_h,  d_tc_h  = safe_extract_array(res_m5_h['体彩初盘']), safe_extract_array(res_m5_h['体彩临场'])
-            
-            p_tc_c_g, p_tc_d_g = calc_pure_prob_array(c_tc_g), calc_pure_prob_array(d_tc_g)
-            p_tc_c_h, p_tc_d_h = calc_pure_prob_array(c_tc_h), calc_pure_prob_array(d_tc_h)
-            math_g, math_h = generate_poisson_baselines(m5_ou_val, m5_hcp_val)
-
-            fric_g = np.round((p_tc_d_g - math_g) * d_tc_g, 4)
-            df_g_rows = []
-            for i in range(8):
-                fric = fric_g[i]
-                if pd.isna(fric): tag = "➖"
-                elif fric > 0.0800: tag = f"🛡️ 极致割肉护盘 ({fric:+.4f})"
-                elif fric > 0.0300: tag = f"🚧 核心风控防线 ({fric:+.4f})"
-                elif fric < -0.0800: tag = f"🩸 抽水诱捕陷阱 ({fric:+.4f})"
-                elif fric < -0.0300: tag = f"📉 虚高敞口放水 ({fric:+.4f})"
-                else: tag = f"⚪ 泊松均衡 ({fric:+.4f})"
-                odds_drop = (d_tc_g[i] - c_tc_g[i]) / c_tc_g[i] if c_tc_g[i] > 0 else 0
-                if odds_drop < -0.15 and d_tc_g[i] > 8.0: tag += " [⚡定点爆破]"
-
-                df_g_rows.append({"进球数": opts_m5_g[i], "体彩临场": f"{d_tc_g[i]:.2f}", "体彩纯率": f"{p_tc_d_g[i]:.4f}" if not pd.isna(p_tc_d_g[i]) else "➖", "泊松期望": f"{math_g[i]:.4f}" if not pd.isna(math_g[i]) else "➖", "流速(Δ)": f"{(p_tc_d_g[i] - p_tc_c_g[i]):.4f}" if not pd.isna(p_tc_d_g[i]) else "➖", "质量加权摩擦(Friction)": tag})
-                
-            st.markdown("## ⚽ V15.0 进球数微观精算阵列")
-            under_idx = math.floor(m5_ou_val) if m5_ou_val > 0 else 0
-            if under_idx > 7: under_idx = 7
-            tc_under = np.sum(p_tc_d_g[:under_idx+1])
-            math_under = np.sum(math_g[:under_idx+1])
-            diff_under = round(tc_under - math_under, 4)
-            
-            if diff_under > 0.0500: st.error(f"🚨 **跨盘口逻辑撕裂：** 体彩进球数矩阵在【小球区间】发生严重质量塌陷(超物理预期 {diff_under*100:+.2f}%)！")
-            elif diff_under < -0.0500: st.warning(f"🌪️ **跨盘口逆向撕裂：** 体彩进球数矩阵在【大球区间】防御力度畸高！")
-            else: st.success(f"⚖️ **跨盘口物理锁定完美：** 进球数细分结构与 {m5_ou_val} 大小球盘口匹配。")
-
-            st.dataframe(pd.DataFrame(df_g_rows), hide_index=True, use_container_width=True)
-            st.markdown("<br>", unsafe_allow_html=True)
-            st.markdown("## 🔵 V15.0 半全场马尔可夫状态转移矩阵")
-            
-            fric_h = np.round((p_tc_d_h - math_h) * d_tc_h, 4)
-            df_h_rows = []
-            for i in range(9):
-                fric = fric_h[i]
-                if pd.isna(fric): tag = "➖"
-                elif fric > 0.0800: tag = f"🛡️ 极限拦截 ({fric:+.4f})"
-                elif fric > 0.0300: tag = f"🚧 真实防范 ({fric:+.4f})"
-                elif fric < -0.0800: tag = f"🩸 剧毒诱导 ({fric:+.4f})"
-                elif fric < -0.0300: tag = f"📉 虚高放水 ({fric:+.4f})"
-                else: tag = f"⚪ 结构平衡 ({fric:+.4f})"
-                odds_drop = (d_tc_h[i] - c_tc_h[i]) / c_tc_h[i] if c_tc_h[i] > 0 else 0
-                if odds_drop < -0.20 and d_tc_h[i] > 10.0: tag += " [⚡高赔定向坍塌]"
-
-                df_h_rows.append({"半/全场": opts_m5_h[i], "体彩临场": f"{d_tc_h[i]:.2f}", "体彩纯率": f"{p_tc_d_h[i]:.4f}" if not pd.isna(p_tc_d_h[i]) else "➖", "泊松期望": f"{math_h[i]:.4f}" if not pd.isna(math_h[i]) else "➖", "流速(Δ)": f"{(p_tc_d_h[i] - p_tc_c_h[i]):.4f}" if not pd.isna(p_tc_d_h[i]) else "➖", "马尔可夫摩擦(Friction)": tag})
-                
-            col_m1, col_m2 = st.columns(2)
-            if fric_h[3] > 0.0500 and fric_h[0] < 0.0100: col_m1.error("⏱️ **【状态转移剧本曝光】** 庄家重金死守‘平/胜’！真实的反杀剧本在下半场！")
-            elif fric_h[0] > 0.0500 and fric_h[3] < 0.0100: col_m1.success("⚡ **【闪电战偏度曝光】** 庄家对‘胜/胜’进行极限物理降水防守！")
-            else: col_m1.info("⚪ **【主场动能平稳】** 状态转移基本符合常规。")
-            if fric_h[4] > 0.0600: col_m2.warning("🧊 **【全场冻结偏度】** ‘平/平’呈现极端质量摩擦，全场防沉闷绝杀！")
-            st.dataframe(pd.DataFrame(df_h_rows), hide_index=True, use_container_width=True)
-        except Exception as e:
-            st.error("🚨 模块五运行异常。")
-            st.code(traceback.format_exc())
 
 # ==============================================================================
 # ===================== 🎲 模块六：365 核心全息约束 =====================
 # ==============================================================================
 elif active_module == "🎲 模块六：365 核心全息约束 (剧本剥离版)":
-    st.header(f"🎲 {current_match} - 365 核心全息约束 (人工干预探测版)")
-    st.caption("【深度重构版】引入亚欧挤压差、半全场时间动能比及抽水缩表侦测，扒开精算师的微观操盘剧本。")
-
-    opts_m6_std = ["主胜", "平局", "客胜"]
-    cols_m6_2 = ["初盘", "临场"]
-    init_m6_std = [[2.00, 1.90], [3.50, 3.40], [3.60, 4.00]]
-
-    opts_m6_ah = ["盘口(主让为负)", "上盘水位", "下盘水位"]
-    init_m6_ah = [[-0.50, -0.75], [1.95, 2.05], [1.90, 1.85]]
-
-    opts_m6_eh = ["让球数(主让为负)", "让球胜", "让球平", "让球负"]
-    init_m6_eh = [[-1.0, -1.0], [3.80, 3.50], [3.60, 3.50], [1.80, 1.90]]
-
-    opts_m6_htft = ["胜/胜", "胜/平", "胜/负", "平/胜", "平/平", "平/负", "负/胜", "负/平", "负/负"]
-    init_m6_htft = [[4.33, 4.00], [15.0, 14.0], [29.0, 34.0], [6.5, 6.0], [5.5, 5.0], [6.0, 6.5], [29.0, 34.0], [15.0, 15.0], [4.5, 5.0]]
-
-    tab_std, tab_ah, tab_eh, tab_htft = st.tabs(["📊 365 标盘", "📉 365 亚指", "🥅 365 欧让", "⏱️ 365 半全场"])
-    with tab_std: res_m6_std = render_odds_grid("m6std", current_match, "标盘", opts_m6_std, cols_m6_2, init_m6_std)
-    with tab_ah: res_m6_ah = render_odds_grid("m6ah", current_match, "亚指", opts_m6_ah, cols_m6_2, init_m6_ah)
-    with tab_eh: res_m6_eh = render_odds_grid("m6eh", current_match, "欧让", opts_m6_eh, cols_m6_2, init_m6_eh)
-    with tab_htft: res_m6_htft = render_odds_grid("m6htft", current_match, "半/全场", opts_m6_htft, cols_m6_2, init_m6_htft)
-
-    calc_key_m6 = f"m6_calc_{current_match}"
-    if calc_key_m6 not in st.session_state: st.session_state[calc_key_m6] = False
-    
-    st.write("")
-    if st.button("🚀 启动 365 剧本剥离与干预探测", type="primary", use_container_width=True, key=f"btn_{calc_key_m6}"):
-        st.session_state[calc_key_m6] = True
-
-    if st.session_state[calc_key_m6]:
-        st.markdown("---")
-        try:
-            std_c, std_d = safe_extract_array(res_m6_std['初盘']), safe_extract_array(res_m6_std['临场'])
-            ah_c, ah_d = safe_extract_array(res_m6_ah['初盘']), safe_extract_array(res_m6_ah['临场'])
-            eh_c, eh_d = safe_extract_array(res_m6_eh['初盘']), safe_extract_array(res_m6_eh['临场'])
-            ht_c, ht_d = safe_extract_array(res_m6_htft['初盘']), safe_extract_array(res_m6_htft['临场'])
-            
-            p_std_c, p_std_d = calc_pure_prob_array(std_c), calc_pure_prob_array(std_d)
-            p_ht_c, p_ht_d = calc_pure_prob_array(ht_c), calc_pure_prob_array(ht_d)
-            
-            p_ah_c, p_ah_d = np.zeros(2), np.zeros(2)
-            if ah_c[1] > 0 and ah_c[2] > 0:
-                raw_c = np.array([1/(ah_c[1]+1), 1/(ah_c[2]+1)]) if ah_c[1] < 5 else np.array([1/ah_c[1], 1/ah_c[2]])
-                p_ah_c = np.round(raw_c / np.sum(raw_c), 4)
-            if ah_d[1] > 0 and ah_d[2] > 0:
-                raw_d = np.array([1/(ah_d[1]+1), 1/(ah_d[2]+1)]) if ah_d[1] < 5 else np.array([1/ah_d[1], 1/ah_d[2]])
-                p_ah_d = np.round(raw_d / np.sum(raw_d), 4)
-                
-            p_eh_c, p_eh_d = np.zeros(3), np.zeros(3)
-            if eh_c[1] > 0 and eh_c[2] > 0 and eh_c[3] > 0: p_eh_c = calc_pure_prob_array(eh_c[1:4])
-            if eh_d[1] > 0 and eh_d[2] > 0 and eh_d[3] > 0: p_eh_d = calc_pure_prob_array(eh_d[1:4])
-
-            d_std = np.round(p_std_d - p_std_c, 4)
-            d_ah  = np.round(p_ah_d - p_ah_c, 4)
-            d_eh  = np.round(p_eh_d - p_eh_c, 4)
-            d_ht  = np.round(p_ht_d - p_ht_c, 4)
-
-            st.markdown("### 🤖 顶层风控：人工介入与抽水压榨确诊单")
-            margin_c_ht = np.nansum(1.0 / ht_c) - 1
-            margin_d_ht = np.nansum(1.0 / ht_d) - 1
-            margin_diff = round(margin_d_ht - margin_c_ht, 4)
-            
-            all_deltas = np.concatenate([np.abs(d_std), np.abs(d_ah), np.abs(d_eh), np.abs(d_ht)])
-            max_dev = np.nanmax(all_deltas)
-            median_dev = np.nanmedian(all_deltas)
-            override_index = round(max_dev / median_dev, 4) if median_dev > 0 else 0
-            
-            col_o1, col_o2, col_o3 = st.columns(3)
-            col_o1.metric("内部离散变异系数", f"{override_index:.4f}")
-            col_o2.metric("半全场初盘抽水率", f"{margin_c_ht*100:.4f}%")
-            col_o3.metric("半全场临场抽水率", f"{margin_d_ht*100:.4f}%")
-            
-            if override_index > 4.0: st.error(f"🦇 **【人工紧急避险熔断】** 内部变异系数爆表({override_index:.4f})！365精算师已断开AI自动平衡，针对特定冷门选项进行人工粗暴压水，该项有极大内幕击杀可能！")
-            else: st.success("💻 **【机器控盘期】** 四大盘口数学传动正常平稳，无剧烈人工干预痕迹，按纯实力流速处理。")
-                
-            if margin_diff > 0.0200: st.warning(f"🚧 **【极限缩表护盘】** 365临场暴力提升半全场抽水率(+{margin_diff*100:.4f}%)，庄家对该维度失去控盘自信，拒开公平赔率以逼退散户！")
-
-            delta_std_w = d_std[0] if not pd.isna(d_std[0]) else 0
-            delta_ah_up = d_ah[0] if not pd.isna(d_ah[0]) else 0
-            delta_eh_d  = d_eh[1] if not pd.isna(d_eh[1]) else 0 
-            ht_dw = d_ht[3] if not pd.isna(d_ht[3]) else 0
-
-            def evaluate_m6_item(category, opt_name, delta, p_c, p_d):
-                if pd.isna(delta) or p_d == 0: return "➖ 数据缺失或未开盘"
-                if category == 'std':
-                    if opt_name == "主胜":
-                        if delta > 0.015:
-                            if delta_ah_up <= -0.015: return "🚨 【诱导陷阱】标盘疯狂造热主队，但亚盘暗中撤防，极概率赢球输盘或爆冷！"
-                            if delta_ah_up > 0.015 and delta_eh_d > 0.02: return "🚨 【刚好赢一球壁垒】主胜/亚盘齐热，但欧让平防守激增！剧毒，防主队1球小胜输盘。"
-                            return "💎 【黄金共振】标亚同步极限施压，真实核心防守项，强力看好。"
-                        if delta < -0.015:
-                            if delta_ah_up > 0.015: return "🕳️ 【深水反诱】标盘遭弃但亚盘诡异升水，庄家在下盘挖坑！"
-                            return "📉 【真实抛弃】资金随势出逃，机构不再防守此项。"
-                    elif opt_name == "平局":
-                        if delta > 0.015 and delta_std_w < -0.01: return "🚧 【冷平设防】主胜退潮资金大量涌入平局，庄家被迫拉高平局防线。"
-                    elif opt_name == "客胜":
-                        if delta > 0.02 and delta_std_w < -0.02: return "⚡ 【反转剧本】主胜崩塌，客胜强势吸筹，警惕客队爆冷反杀！"
-                elif category == 'ah':
-                    if opt_name == "上盘水位":
-                        if delta > 0.015 and delta_std_w <= -0.015: return "☠️ 【深水诱捕】强拉亚盘制造信心，标盘主胜实则暴跌，骗筹上盘！"
-                        if delta < -0.015 and delta_std_w > 0.015: return "🌊 【顺流泄洪】主胜利好下，亚盘全线放水诱买，极难穿盘。"
-                        if delta > 0.02: return "🌋 【阻力飙升】单方面拉高亚盘阻力，庄家畏惧上盘打穿。"
-                elif category == 'eh':
-                    if "胜" in opt_name:
-                        if delta < -0.015 and delta_std_w > 0.015: return "🚧 【穿盘铁幕】主胜大热但深盘防守暴跌，赢球输盘绝对预警！"
-                    elif "平" in opt_name:
-                        if delta > 0.02: return "🎯 【精准制导】让平防守大幅收紧，机构严防主队正好赢一球！"
-                elif category == 'htft':
-                    if opt_name == "胜/胜":
-                        if delta_std_w > 0.015 and delta < -0.010 and ht_dw > 0.015: return "⏱️ 【时间轴剧本暴露】主胜大热但胜胜遭抛弃，资金疯抢“平/胜”！真正重注底牌在下半场！"
-                        if delta > 0.015 and delta_std_w > 0.015: return "⚡ 【闪电战】与标盘高度共振，看好主队半场直接建立不可逆优势。"
-                    elif opt_name == "平/胜":
-                        if delta > 0.015 and delta_std_w > 0.01: return "🔎 【剧本偏移】主胜大势下资金疯抢平胜，严防剧本局或下半场绝杀！"
-                    elif opt_name == "平/平":
-                        if delta > 0.02: return "🧊 【极限降温】机构重防平平，全场概率极度沉闷或 0-0 完场。"
-                if delta >= 0.03: return "🌋 【极限极值】机构防线严重承压！"
-                if delta >= 0.015: return "📈 【显著流入】盘口出现实质性升温。"
-                if delta <= -0.03: return "🧊 【极限放水】机构彻底开门放水。"
-                if delta <= -0.015: return "📉 【显著流出】"
-                return "⚪ 常规换手波动"
-
-            st.markdown("### 📊 365 标盘(1X2) 全息切片")
-            df_std_out = []
-            for i in range(3):
-                df_std_out.append({"选项": opts_m6_std[i], "初盘纯率": f"{p_std_c[i]:.4f}", "临场纯率": f"{p_std_d[i]:.4f}", "纯率增量(Δ)": f"{d_std[i]:.4f}", "深度战术定性": evaluate_m6_item('std', opts_m6_std[i], d_std[i], p_std_c[i], p_std_d[i])})
-            st.dataframe(pd.DataFrame(df_std_out), hide_index=True, use_container_width=True)
-
-            st.markdown("### 📉 365 亚洲让球盘 切片")
-            df_ah_out = []
-            for i in range(2):
-                df_ah_out.append({"选项": opts_m6_ah[i+1], "初盘纯率": f"{p_ah_c[i]:.4f}", "临场纯率": f"{p_ah_d[i]:.4f}", "纯率增量(Δ)": f"{d_ah[i]:.4f}", "深度战术定性": evaluate_m6_item('ah', opts_m6_ah[i+1], d_ah[i], p_ah_c[i], p_ah_d[i])})
-            st.dataframe(pd.DataFrame(df_ah_out), hide_index=True, use_container_width=True)
-
-            st.markdown("### 🥅 365 欧洲让球盘 切片")
-            if np.sum(p_eh_c) > 0:
-                df_eh_out = []
-                for i in range(3):
-                    df_eh_out.append({"选项": opts_m6_eh[i+1], "初盘纯率": f"{p_eh_c[i]:.4f}", "临场纯率": f"{p_eh_d[i]:.4f}", "纯率增量(Δ)": f"{d_eh[i]:.4f}", "深度战术定性": evaluate_m6_item('eh', opts_m6_eh[i+1], d_eh[i], p_eh_c[i], p_eh_d[i])})
-                st.dataframe(pd.DataFrame(df_eh_out), hide_index=True, use_container_width=True)
-            else:
-                st.warning("➖ 欧让盘未录入数据，已安全跳过。")
-
-            st.markdown("### ⏱️ 365 半/全场剧本 切片")
-            df_ht_out = []
-            for i in range(9):
-                df_ht_out.append({"选项": opts_m6_htft[i], "初盘纯率": f"{p_ht_c[i]:.4f}", "临场纯率": f"{p_ht_d[i]:.4f}", "纯率增量(Δ)": f"{d_ht[i]:.4f}", "深度战术定性": evaluate_m6_item('htft', opts_m6_htft[i], d_ht[i], p_ht_c[i], p_ht_d[i])})
-            st.dataframe(pd.DataFrame(df_ht_out), hide_index=True, use_container_width=True)
-        except Exception as e:
-            st.error("🚨 365 独立模块运行异常，请检查填写数据。")
-            st.code(traceback.format_exc())
+    st.header(f"🎲 {current_match} - 365 核心全息约束")
+    res_m6_std = render_odds_grid("m6std", current_match, "标盘", ["主胜", "平局", "客胜"], ["初盘", "临场"], [[2.00, 1.90], [3.50, 3.40], [3.60, 4.00]])
