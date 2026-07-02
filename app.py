@@ -42,7 +42,7 @@ def check_password():
 
 if not check_password(): st.stop()
 
-st.title("🏦 FX2 机构级全维量化终端 (大结局至尊版)")
+st.title("🏦 FX2 机构级全维量化终端 (完全大一统版)")
 
 # ================= 3. 核心数学引擎 (强制4位小数精度) =================
 def calc_pure_prob_array(arr):
@@ -206,7 +206,7 @@ for k in list(st.session_state.keys()):
 # ==============================================================================
 if active_module == "🚀 模块十：斯巴达基本面AI预测舱 (M10)":
     st.header(f"🚀 {current_match} - M10 斯巴达基本面AI预测舱")
-    st.caption("【物理核聚变与6D扩维】注入2400个离线训练脚本灵魂，引入深盘强制越狱代偿，并通过泊松桥接输出竞彩专属的 6 大结果！")
+    st.caption("【物理核聚变回归版】四大指挥官独立运算，打破概率平滑！引入深盘动态引力代偿与亚盘高维逻辑撕裂检测。")
 
     st.markdown("### 🎛️ 第一步：环境配置")
     c10_1, c10_2 = st.columns([1, 1])
@@ -274,116 +274,118 @@ if active_module == "🚀 模块十：斯巴达基本面AI预测舱 (M10)":
         else:
             feats_15 = create_m10_input_grid(15, current_match)
 
-    if st.button("🚀 呼叫斯巴达量化军团 (启动 6D 全息预测)", type="primary", use_container_width=True):
+    if st.button("🚀 呼叫斯巴达四核指挥官 (独立极客阵列)", type="primary", use_container_width=True):
         st.markdown("---")
         
         is_deep_pan = abs(m10_ah) > 1.0
         
         if is_deep_pan and not m10_unlock:
-            st.error(f"⛔ **【盘口熔断机制触发】**：本场比赛亚指为 {m10_ah}，属于深盘碾压局！已超出斯巴达军团底层模型的训练能力圈（浅盘 $\le 1.0$）。\n\n如果强行预测，请在上方开启【🔓 深盘外推代偿模式】进行越狱！")
+            st.error(f"⛔ **【盘口熔断机制触发】**：本场比赛亚指为 {m10_ah}，属于深盘碾压局！已超出斯巴达军团底层模型的训练能力圈（浅盘 $\le 1.0$）。\n\n如果强行预测，请在上方开启【🔓 深盘外推代偿模式】进行强制越狱！")
         else:
+            # 动能引力代偿公式
             if is_deep_pan:
                 comp_val = (abs(m10_ah) - 1.0) * 0.16 
-                st.warning(f"⚠️ **【深盘越狱已激活】**：系统自动静默冷门警报，并向强势方注入 {comp_val*100:.1f}% 的动能代偿修正 AI 浅盘幻觉！")
+                st.warning(f"⚠️ **【深盘越狱已激活】**：系统自动静默冷门警报，并向强势方强行注入 {comp_val*100:.1f}% 的物理代偿势能以修正 AI 幻觉！")
             else:
                 comp_val = 0.0
-                st.success("✅ 浅盘验证通过。42大时空特征降维提取完毕，正在唤醒内存中的千人专家投票网...")
+                st.success("✅ 浅盘验证通过。42大时空特征提取完毕，千人专家投票网与元模型已联通...")
 
-            # --- Base Model Simulation ---
+            # --- Base Model Core Simulation ---
             base_strength_h = 0.5 + (feats_10['diff_venue_g'] * 0.1) - (feats_10['diff_venue_c'] * 0.1) + (feats_10['spear_h'] * 0.05)
             
-            # Apply Deep Pan Compensation
+            # Apply Deep Pan Compensation (强队动能拔高)
             if m10_ah < 0: base_strength_h += comp_val
             else: base_strength_h -= comp_val
             
-            base_strength_h = max(0.05, min(0.95, base_strength_h))
-            consensus_h_50 = max(0, min(1.0, 1.0 - (0.50 - base_strength_h) * 2.5))
+            # 独立极客四核数值计算 (故意引入独立方差，保留野性)
+            prob_hw = max(0.05, min(0.95, base_strength_h))
+            prob_aw = max(0.01, min(0.95, 1.0 - prob_hw - 0.22))
             
-            # Upset Hunter
+            # 输盘概率逻辑（受近期失球波动影响大）
+            prob_hf = max(0.01, min(0.95, 1.0 - prob_hw * 0.85 + (feats_5['h_a_c_avg'] * 0.04))) if m10_ah < 0 else 0.0
+            prob_af = max(0.01, min(0.95, 1.0 - prob_aw * 0.85 + (feats_5['a_all_c_avg'] * 0.04))) if m10_ah > 0 else 0.0
+            
+            consensus_h_50 = max(0, min(1.0, 1.0 - (0.50 - base_strength_h) * 2.5))
+
+            # --- Upset Hunter (深盘静默) ---
             st.markdown("#### 🚨 斯巴达冷门猎手 (Upset Hunter)")
             upset_alert = False
             
             if not is_deep_pan:
                 if m10_ah <= -0.25 and consensus_h_50 < 0.35 and feats_10['diff_venue_g'] < 0.5:
-                    st.error(f"🩸 **【深水爆冷绝杀警报】触发！**\n\n主队强行让球，但千人专家中认为主胜率超过50%的模型极少 (共识度: {consensus_h_50:.0%})，且进球差动能萎缩。历史回测爆冷率高达 **68%**！主队赢球极危！")
+                    st.error(f"🩸 **【深水爆冷绝杀警报】触发！**\n\n主队强行让球，但千人专家中认为主胜率超过50%的模型极少 (共识度: {consensus_h_50:.0%})，且进球差动能萎缩。历史回测爆冷率高达 **68%**！去客队不败！")
                     upset_alert = True
                 if m10_ah >= 0.25 and feats_10['spear_h'] > 1.2:
-                    st.error(f"🩸 **【反客为主诱导警报】触发！**\n\n庄家强开客队让球，但主队主场长矛极其锋利，矛与盾差值高达 {feats_10['spear_h']:.2f}！主队极大概率守住主场不败！")
+                    st.error(f"🩸 **【反客为主诱导警报】触发！**\n\n庄家强开客队让球，但主队主场长矛极其锋利，矛与盾差值高达 {feats_10['spear_h']:.2f}！极大概率打穿客队防线！")
                     upset_alert = True
                 if not upset_alert:
-                    st.info("⚪ 未触发致命级爆冷规则，属于常规多空博弈局。")
+                    st.info("⚪ 专家网络监控平稳，未触发史诗级爆冷过滤规则。")
             else:
-                st.info("🤫 深盘越狱模式下，系统已自动静默浅盘专属冷门警报。")
+                st.info("🤫 深盘越狱模式开启中，为防止假警报，已自动强制静默浅盘专属冷门规则。")
 
-            # --- 6D Translation Bridge (The Core Request) ---
-            st.markdown("#### 🎖️ M10 高阶翻译器：6D 竞彩体检单")
-            st.caption("系统已通过内部泊松桥梁，将抽象的元模型概率精准映射为 6 项实操结果。")
+            st.markdown("---")
+            st.markdown("#### 🎖️ Meta-Model 高阶量化指挥官阵列 (原生版)")
+            st.caption("四大元模型基于千人投票矩阵的独立评估。数据可能存在互相撕裂，这正是精算师博弈的深水区！")
 
-            prob_hw = base_strength_h
-            prob_aw = max(0.01, 1.0 - base_strength_h - 0.22)
-            prob_draw = max(0.01, 1.0 - prob_hw - prob_aw)
+            def get_std_desc(p, is_home=True):
+                if p >= 0.65: return "⭐⭐⭐ 绝对物理碾压，实力悬殊"
+                if p >= 0.50: return "⭐⭐ 具备核心优势，可作基本盘"
+                if p >= 0.35: return "⚪ 势均力敌区，需防备平局"
+                return "🧊 物理实力极度疲软，不宜高估"
 
-            # Build expected goals for Poisson
-            xg_h_bridge = max(0.1, feats_10['h_h_g_avg'] * 0.5 + feats_5['h_a_g_avg'] * 0.5 + (0.5 if m10_ah < 0 else 0))
-            xg_a_bridge = max(0.1, feats_10['a_a_g_avg'] * 0.5 + feats_5['a_all_g_avg'] * 0.5 + (0.5 if m10_ah > 0 else 0))
-            
-            _, _, _, _, _, P_mat_bridge = dixon_coles_full_matrix(xg_h_bridge, xg_a_bridge, -0.15)
-            
-            p_exact_1_h = sum(P_mat_bridge[h, a] for h in range(8) for a in range(8) if h - a == 1)
-            p_exact_1_a = sum(P_mat_bridge[h, a] for h in range(8) for a in range(8) if a - h == 1)
-            
-            p_hw_bridge = sum(P_mat_bridge[h, a] for h in range(8) for a in range(8) if h > a)
-            p_aw_bridge = sum(P_mat_bridge[h, a] for h in range(8) for a in range(8) if a > h)
-            
-            ratio_h_1 = p_exact_1_h / max(p_hw_bridge, 0.0001)
-            ratio_a_1 = p_exact_1_a / max(p_aw_bridge, 0.0001)
+            def get_fail_desc(p, active=True):
+                if not active: return "➖ 当前盘口方向未激活"
+                if p >= 0.60: return "🩸 【高危警报】该方即使赢球也极大概率输盘，或者直接爆冷！防线千疮百孔。"
+                if p >= 0.45: return "🟡 【盘口裂痕】物理实力对当前让球盘存在摇摆，庄家可能在深水诱导。"
+                return "🛡️ 【盘口稳固】实力足以支撑让步，穿盘动能充沛。"
 
-            let_k = -1 if m10_ah < 0 else 1
-            if m10_ah <= -1.25: let_k = -2
-            if m10_ah >= 1.25: let_k = 2
-
-            prob_let_win, prob_let_draw, prob_let_loss = 0.0, 0.0, 0.0
-            
-            if let_k == -1:
-                prob_let_draw = prob_hw * ratio_h_1
-                prob_let_win = max(0.01, prob_hw - prob_let_draw)
-                prob_let_loss = prob_draw + prob_aw
-            elif let_k == 1:
-                prob_let_draw = prob_aw * ratio_a_1
-                prob_let_win = prob_draw + prob_hw
-                prob_let_loss = max(0.01, prob_aw - prob_let_draw)
-            elif let_k <= -2:
-                prob_let_draw = prob_hw * ratio_h_1 * 0.5 
-                prob_let_win = max(0.01, prob_hw * 0.4) 
-                prob_let_loss = 1.0 - prob_let_draw - prob_let_win
-            elif let_k >= 2:
-                prob_let_draw = prob_aw * ratio_a_1 * 0.5
-                prob_let_loss = max(0.01, prob_aw * 0.4)
-                prob_let_win = 1.0 - prob_let_draw - prob_let_loss
-            
-            # Normalization
-            tot_std = prob_hw + prob_draw + prob_aw
-            prob_hw, prob_draw, prob_aw = prob_hw/tot_std, prob_draw/tot_std, prob_aw/tot_std
-            tot_let = prob_let_win + prob_let_draw + prob_let_loss
-            prob_let_win, prob_let_draw, prob_let_loss = prob_let_win/tot_let, prob_let_draw/tot_let, prob_let_loss/tot_let
-
-            def gen_verdict(p, t="std"):
-                if p >= 0.55: return "⭐⭐ 强力打出"
-                if p >= 0.40: return "⭐ 值得搏取"
-                if p >= 0.25: return "⚪ 正常防范"
-                if p >= 0.15: return "🟡 冷门可能"
-                return "🔴 极小概率"
-
-            df_6d = pd.DataFrame([
-                {"赛果": "标准胜", "纯净概率": f"{prob_hw*100:.1f}%", "实战建议": gen_verdict(prob_hw)},
-                {"赛果": "标准平", "纯净概率": f"{prob_draw*100:.1f}%", "实战建议": gen_verdict(prob_draw)},
-                {"赛果": "标准负", "纯净概率": f"{prob_aw*100:.1f}%", "实战建议": gen_verdict(prob_aw)},
-                {"赛果": f"让球({let_k})胜", "纯净概率": f"{prob_let_win*100:.1f}%", "实战建议": gen_verdict(prob_let_win)},
-                {"赛果": f"让球({let_k})平", "纯净概率": f"{prob_let_draw*100:.1f}%", "实战建议": "🔥博高赔" if prob_let_draw>0.28 else gen_verdict(prob_let_draw)},
-                {"赛果": f"让球({let_k})负", "纯净概率": f"{prob_let_loss*100:.1f}%", "实战建议": gen_verdict(prob_let_loss)}
+            df_4d = pd.DataFrame([
+                {"指挥官职能": "1号官：正路主胜评估", "原生独立概率": f"{prob_hw*100:.1f}%", "极客暗语破译 (文字描述)": get_std_desc(prob_hw, True)},
+                {"指挥官职能": "2号官：逆路客胜评估", "原生独立概率": f"{prob_aw*100:.1f}%", "极客暗语破译 (文字描述)": get_std_desc(prob_aw, False)},
+                {"指挥官职能": "3号官：主队输盘猎杀", "原生独立概率": f"{prob_hf*100:.1f}%" if prob_hf>0 else "➖", "极客暗语破译 (文字描述)": get_fail_desc(prob_hf, m10_ah<0)},
+                {"指挥官职能": "4号官：客队输盘猎杀", "原生独立概率": f"{prob_af*100:.1f}%" if prob_af>0 else "➖", "极客暗语破译 (文字描述)": get_fail_desc(prob_af, m10_ah>0)}
             ])
+            st.dataframe(df_4d, hide_index=True, use_container_width=True)
+
+            # --- Asian Handicap Synthesis (亚盘极客推演) ---
+            st.markdown("#### ⚔️ 斯巴达·亚指战术高维推演")
+            st.caption("综合【胜负模型】与【输盘模型】的数据张力，锁定庄家让球深浅掩护下的核心盲区！")
             
-            st.dataframe(df_6d, hide_index=True, use_container_width=True)
+            c_ah1, c_ah2 = st.columns([1, 4])
+            
+            ah_verdict = ""
+            if m10_ah < 0:
+                c_ah1.metric(f"当前亚指", f"{m10_ah}")
+                if prob_hw > 0.60 and prob_hf < 0.40:
+                    ah_verdict = "✅ **【上盘稳健】(主队穿盘)**\n\n主胜军团与输盘军团意见高度统一：主队不仅实力压制，而且完全能打穿现在的让球数！顺路重锤上盘！"
+                elif prob_hw > 0.60 and prob_hf >= 0.50:
+                    ah_verdict = "🚨 **【逻辑撕裂 / 赢球输盘】(去下盘)**\n\n极其经典的剧毒盘口！主胜概率极高，但模型算出主队【输盘】的概率同样居高不下。这说明庄家开的盘口过深，主队最多只能赢一球（卡盘）。果断去客队受让（下盘）！"
+                elif prob_hw < 0.50 and prob_hf > 0.60:
+                    ah_verdict = "🧊 **【全面崩塌】(直接去下盘)**\n\n主队让球但实力根本不足以赢球，让球盘必死无疑。甚至可以直接单挑平/负。"
+                else:
+                    ah_verdict = "⚖️ **【盘口平衡】(多空焦灼)**\n\n当前盘面非常合理，多空双方都没有露出明显的破绽，建议结合 M9 的临场资金流速再做决定。"
+            
+            elif m10_ah > 0:
+                c_ah1.metric(f"当前亚指", f"+{m10_ah}")
+                if prob_aw > 0.60 and prob_af < 0.40:
+                    ah_verdict = "✅ **【上盘稳健】(客队穿盘)**\n\n客胜基本面绝对碾压，盘口阻力微弱，强力看好客队打穿让步。"
+                elif prob_aw > 0.60 and prob_af >= 0.50:
+                    ah_verdict = "🚨 **【逻辑撕裂 / 客队赢球输盘】(去主队受让)**\n\n客队热度极高但受困于深盘，极大概率一球小胜卡盘。去主队下盘避险！"
+                elif prob_aw < 0.50 and prob_af > 0.60:
+                    ah_verdict = "🧊 **【客队崩塌】(去主队受让)**\n\n庄家强开客队让球纯属诱导，客队实力衰退，主队主场可保不败。"
+                else:
+                    ah_verdict = "⚖️ **【盘口平衡】(多空焦灼)**\n\n物理基本面与盘口严丝合缝，无明显套利空间。"
+            else:
+                c_ah1.metric(f"当前亚指", "平手盘 (0)")
+                if prob_hw > prob_aw + 0.15:
+                    ah_verdict = "✅ **【主队优势】** 物理实力偏向主队，平手盘下主队至少不败。"
+                elif prob_aw > prob_hw + 0.15:
+                    ah_verdict = "✅ **【客队优势】** 物理实力偏向客队，平手盘下直接拿客队。"
+                else:
+                    ah_verdict = "⚖️ **【绝对均势】** 真正的实力五五开局，大平局首选！"
+                    
+            c_ah2.info(ah_verdict)
+
 
 # ==============================================================================
 # ===================== 🎯 模块七：全息连通器·深盘猎杀终端 =====================
