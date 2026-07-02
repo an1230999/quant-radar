@@ -202,11 +202,12 @@ for k in list(st.session_state.keys()):
         if not (is_viewing_m8 and (current_match in k)):
             if base_k8 in st.session_state: st.session_state[base_k8] = st.session_state[k].copy()
 
+
 # ==============================================================================
 # ===================== 🪐 模块八：M8 欧亚双轨全息对撞舱 (1X2+AH) =====================
 # ==============================================================================
 if active_module == "🪐 模块八：M8 欧亚双轨全息对撞舱 (1X2+AH)":
-    st.header(f"🪐 {current_match} - M8 欧亚双轨对撞机 (全白盒推演版)")
+    st.header(f"🪐 {current_match} - M8 欧亚双轨全息对撞舱 (全白盒推演版)")
     st.caption("【专业机构级】不仅监控平博与365的资金差，更全面透视“1X2标盘”、“亚指位移”、“亚指水位”的三维齿轮咬合逻辑。拒绝黑盒，全盘直白解密！")
 
     # --- 1. 盘口身份标定 ---
@@ -229,7 +230,7 @@ if active_module == "🪐 模块八：M8 欧亚双轨全息对撞舱 (1X2+AH)":
     
     # --- Left Track: Smart Money ---
     with col_L:
-        st.markdown("#### 🛡️ 左轨：锋利机构 (如 平博/皇冠)")
+        st.markdown("#### 🛡️ 左轨：全球锋利机构 (如 平博/皇冠)")
         st.markdown("##### 标盘 (1X2)")
         c_l1, c_l2, c_l3 = st.columns(3)
         with c_l1:
@@ -256,7 +257,7 @@ if active_module == "🪐 模块八：M8 欧亚双轨全息对撞舱 (1X2+AH)":
 
     # --- Right Track: Dumb Money ---
     with col_R:
-        st.markdown("#### 🛒 右轨：本土零售 (如 365/马会)")
+        st.markdown("#### 🛒 右轨：本土零售机构 (如 365/马会)")
         st.markdown("##### 标盘 (1X2)")
         c_r1, c_r2, c_r3 = st.columns(3)
         with c_r1:
@@ -304,98 +305,115 @@ if active_module == "🪐 模块八：M8 欧亚双轨全息对撞舱 (1X2+AH)":
             eu_up_flow, eu_dn_flow = np.round(p_eu_ah_d - p_eu_ah_c, 4)
             ret_up_flow, ret_dn_flow = np.round(p_ret_ah_d - p_ret_ah_c, 4)
             
-            # Line Shift (Absolute value difference means Deepen/Shallow)
-            # e.g., -0.5 to -0.75: abs(-0.75) - abs(-0.5) = 0.25 (Deepen)
-            # +0.25 to +0.50: abs(+0.50) - abs(+0.25) = 0.25 (Deepen resistance for upper)
+            # Line Shift Logic (Correct handling of Handicap Deepening/Shallowing)
+            # Both positive and negative handicaps: if abs(new) > abs(old), it deepened.
             eu_line_shift = abs(eu_ah_line_d) - abs(eu_ah_line_c)
             ret_line_shift = abs(ret_ah_line_d) - abs(ret_ah_line_c)
             
             # --- Helper Formatting Functions ---
-            def describe_flow(flow, item_name):
-                if flow > 0.02: return f"🔴 {item_name} 大幅流入 (+{flow*100:.1f}%)"
-                if flow > 0.005: return f"📈 {item_name} 缓慢流入 (+{flow*100:.1f}%)"
-                if flow < -0.02: return f"🧊 {item_name} 坚决流出 ({flow*100:.1f}%)"
-                if flow < -0.005: return f"📉 {item_name} 缓慢流出 ({flow*100:.1f}%)"
-                return f"⚪ {item_name} 平稳换手"
+            def describe_flow_tag(flow):
+                if flow > 0.02: return f"🔴 大幅流入 (+{flow*100:.1f}%)"
+                if flow > 0.005: return f"📈 缓慢流入 (+{flow*100:.1f}%)"
+                if flow < -0.02: return f"🧊 坚决流出 ({flow*100:.1f}%)"
+                if flow < -0.005: return f"📉 缓慢流出 ({flow*100:.1f}%)"
+                return f"⚪ 平稳换手 ({flow*100:+.1f}%)"
             
-            def describe_line(shift):
+            def describe_line_tag(shift):
                 if shift > 0: return f"🔺 强硬升盘 (+{shift})"
                 if shift < 0: return f"🔻 退盘诱导 ({shift})"
                 return "➖ 盘口未动"
                 
-            def get_1x2_verdict(w_f, d_f, l_f):
-                if w_f > 0.015 and d_f <= 0 and l_f <= 0: return "主力做局主队，平负遭到无情挤压抛售。"
-                if d_f > 0.015 and w_f <= 0.01 and l_f <= 0.01: return "资金大量退守中场，防平情绪极其浓厚。"
-                if l_f > 0.015 and w_f <= 0.01: return "客队呈显著反客为主之势，大额资金介入客胜。"
-                if w_f < -0.015 and l_f < -0.015 and d_f > 0.01: return "胜负双双遭弃，资金独退平局，存在极其明显的默契球嫌疑。"
-                if w_f < -0.02 and l_f > 0.01: return "主队被恐慌性抛售，客胜乘机吸筹，主队极危。"
-                return "三项流速处于合理换手区间，无极端单边压迫。"
+            def get_single_1x2_desc(flow, opt_name):
+                if flow > 0.02: return f"主力疯狂压低赔率扫货，{opt_name}真实热度极高。"
+                if flow > 0.005: return f"赔率轻微下调，{opt_name}处于温和吸筹状态。"
+                if flow < -0.02: return f"惨遭资金抛弃，机构坚决不看好{opt_name}。"
+                if flow < -0.005: return f"资金缓慢流出，{opt_name}防御出现松动。"
+                return f"资金平稳换手，机构对{opt_name}无明显倾向动作。"
 
-            def get_ah_verdict(line_shift, up_f):
-                if line_shift > 0 and up_f > 0.015: return "升盘且降水（上盘大热）。机构严防死守，力挺上盘。"
-                if line_shift > 0 and up_f < -0.015: return "升盘但升水（提高门槛吓退散户）。隐蔽保护上盘。"
-                if line_shift < 0 and up_f > 0.015: return "降盘且降水（降低门槛疯狂诱导）。致命陷阱，上盘必死！"
-                if line_shift < 0 and up_f < -0.015: return "降盘且升水。上盘被市场与机构双双抛弃。"
-                if line_shift == 0 and up_f > 0.02: return "盘口未动，但上盘疯狂降水设防。"
-                if line_shift == 0 and up_f < -0.02: return "盘口未动，上盘疯狂放水引诱接盘。"
-                return "亚盘受力均匀，无明显诱盘或挡盘动作。"
+            def get_single_ah_desc(line_shift, up_f):
+                if line_shift > 0 and up_f > 0.015: return "【升盘且降水】机构不仅加深让球门槛，还严密控制赔付，真实设防极其坚决。"
+                if line_shift > 0 and up_f <= 0.015: return "【升盘伴随升水】拉高门槛吓退散户，水位放宽是隐蔽保护，上盘大好。"
+                if line_shift < 0 and up_f > 0.015: return "🚨 【降盘且降水】门槛变低还猛降赔率，制造便宜假象，恶毒诱导！"
+                if line_shift < 0 and up_f <= 0.015: return "【降盘且升水】全面退防，上盘被市场和机构双双抛弃。"
+                if line_shift == 0 and up_f > 0.02: return "【盘口未动狂降水】机构死守当前盘口，惧怕上盘打穿。"
+                if line_shift == 0 and up_f < -0.02: return "【盘口未动狂升水】机构大开绿灯，引诱筹码去上盘送死。"
+                return "亚盘受力均匀，无明显诱盘或挡盘破绽。"
+            
+            def get_cross_1x2_desc(eu_f, ret_f, opt_name):
+                diff = eu_f - ret_f
+                if eu_f < -0.01 and ret_f > 0.01:
+                    return f"🚨 【散户火坑】全球聪明钱正在抛售，本土机构却强压赔率诱导散户买入，{opt_name}是绝对的死坑！"
+                if eu_f > 0.015 and ret_f < 0:
+                    return f"💎 【信息差金矿】全球聪明钱重注买入，本土机构反应滞后或装死未降赔，{opt_name}存在巨大价值！"
+                if eu_f > 0.015 and ret_f > 0.015:
+                    return f"✅ 【全球共振】主力与散户情绪同步，机构联手防守{opt_name}，打出概率极高。"
+                if eu_f < -0.015 and ret_f < -0.015:
+                    return f"🧊 【彻底抛弃】全球资金同步出逃，{opt_name}死路一条。"
+                if abs(diff) > 0.02:
+                    return f"🟡 【认知分歧】双轨流速撕裂严重 (差值 {diff*100:+.1f}%)，{opt_name}存在剧烈博弈噪音。"
+                return f"⚪ 【常规波动】双轨认知基本同步，{opt_name}无极端剪刀差表现。"
+                
+            def get_cross_ah_desc(eu_ls, ret_ls, eu_up, ret_up):
+                if eu_ls > 0 and ret_ls <= 0: return "💎 聪明钱机构已强行升盘设防，散户机构却假装安稳。上盘真实受力大，利好上盘。"
+                if eu_ls < 0 and ret_ls >= 0: return "🚨 聪明钱机构暗中降盘撤退，散户机构还在死撑。上盘防线已虚空，极度危险！"
+                if eu_ls == ret_ls:
+                    diff_up = eu_up - ret_up
+                    if eu_up < -0.015 and ret_up > 0.015: return "🚨 盘口一致，但聪明钱对上盘疯狂放水，散户机构却在降水诱热！上盘为诱捕网。"
+                    if eu_up > 0.015 and ret_up < -0.015: return "💎 盘口一致，聪明钱对上盘疯狂降水设防，本土机构装死。看好上盘真实打出。"
+                    return "⚪ 亚指双轨变动基本同步，无明显欧亚防线撕裂。"
+                return "🟡 双轨亚指变动错乱，存在特殊诱导，建议结合标盘定性。"
 
             # ================= GUI OUTPUT =================
-            st.markdown("### 🔬 第三步：独立机构微观切片诊断")
+            st.markdown("### 🔬 第三步：独立机构微观切片诊断报告")
             c_rpt1, c_rpt2 = st.columns(2)
             
             with c_rpt1:
-                st.markdown("#### 🛡️ 平博(左轨) - 全球聪明钱意图侦测")
-                st.write("**【1X2 标盘流速】**")
-                st.write(f"• {describe_flow(eu_w_flow, '主胜')} | {describe_flow(eu_d_flow, '平局')} | {describe_flow(eu_l_flow, '客负')}")
-                st.info(f"**逻辑推演**：{get_1x2_verdict(eu_w_flow, eu_d_flow, eu_l_flow)}")
-                st.write("**【亚指 (AH) 位移与水位】**")
-                st.write(f"• 位移：{describe_line(eu_line_shift)} | 水位：{describe_flow(eu_up_flow, '上盘')} | {describe_flow(eu_dn_flow, '下盘')}")
-                st.success(f"**逻辑推演**：{get_ah_verdict(eu_line_shift, eu_up_flow)}")
+                st.markdown("#### 🛡️ 平博(左轨) - 真实意图侦测")
+                st.markdown("**【标盘 (1X2) 单项拆解】**")
+                st.write(f"• **主胜 ({describe_flow_tag(eu_w_flow)})**：{get_single_1x2_desc(eu_w_flow, '主胜')}")
+                st.write(f"• **平局 ({describe_flow_tag(eu_d_flow)})**：{get_single_1x2_desc(eu_d_flow, '平局')}")
+                st.write(f"• **客负 ({describe_flow_tag(eu_l_flow)})**：{get_single_1x2_desc(eu_l_flow, '客负')}")
+                st.markdown("**【亚指 (AH) 深度拆解】**")
+                st.write(f"• 变动：位移 **{describe_line_tag(eu_line_shift)}** | 上盘水 **{describe_flow_tag(eu_up_flow)}**")
+                st.info(f"**亚盘逻辑推演**：{get_single_ah_desc(eu_line_shift, eu_up_flow)}")
                 
             with c_rpt2:
-                st.markdown("#### 🛒 365(右轨) - 本土散户情绪雷达")
-                st.write("**【1X2 标盘流速】**")
-                st.write(f"• {describe_flow(ret_w_flow, '主胜')} | {describe_flow(ret_d_flow, '平局')} | {describe_flow(ret_l_flow, '客负')}")
-                st.info(f"**逻辑推演**：{get_1x2_verdict(ret_w_flow, ret_d_flow, ret_l_flow)}")
-                st.write("**【亚指 (AH) 位移与水位】**")
-                st.write(f"• 位移：{describe_line(ret_line_shift)} | 水位：{describe_flow(ret_up_flow, '上盘')} | {describe_flow(ret_dn_flow, '下盘')}")
-                st.success(f"**逻辑推演**：{get_ah_verdict(ret_line_shift, ret_up_flow)}")
+                st.markdown("#### 🛒 365(右轨) - 散户情绪雷达")
+                st.markdown("**【标盘 (1X2) 单项拆解】**")
+                st.write(f"• **主胜 ({describe_flow_tag(ret_w_flow)})**：{get_single_1x2_desc(ret_w_flow, '主胜')}")
+                st.write(f"• **平局 ({describe_flow_tag(ret_d_flow)})**：{get_single_1x2_desc(ret_d_flow, '平局')}")
+                st.write(f"• **客负 ({describe_flow_tag(ret_l_flow)})**：{get_single_1x2_desc(ret_l_flow, '客负')}")
+                st.markdown("**【亚指 (AH) 深度拆解】**")
+                st.write(f"• 变动：位移 **{describe_line_tag(ret_line_shift)}** | 上盘水 **{describe_flow_tag(ret_up_flow)}**")
+                st.info(f"**亚盘逻辑推演**：{get_single_ah_desc(ret_line_shift, ret_up_flow)}")
                 
             st.markdown("---")
-            st.markdown("### ⚔️ 第四步：跨机构 1X2 认知剪刀差对撞")
+            st.markdown("### ⚔️ 第四步：跨机构认知剪刀差对撞台 (对账单)")
             
             # --- Detail Matrix ---
             df_diff = pd.DataFrame([
                 {"监控项": "主胜流速", "平博(Smart)": f"{eu_w_flow:+.4f}", "365(Retail)": f"{ret_w_flow:+.4f}", "认知剪刀差": f"{eu_w_flow - ret_w_flow:+.4f}"},
                 {"监控项": "平局流速", "平博(Smart)": f"{eu_d_flow:+.4f}", "365(Retail)": f"{ret_d_flow:+.4f}", "认知剪刀差": f"{eu_d_flow - ret_d_flow:+.4f}"},
                 {"监控项": "客负流速", "平博(Smart)": f"{eu_l_flow:+.4f}", "365(Retail)": f"{ret_l_flow:+.4f}", "认知剪刀差": f"{eu_l_flow - ret_l_flow:+.4f}"},
+                {"监控项": "亚指位移", "平博(Smart)": describe_line_tag(eu_line_shift), "365(Retail)": describe_line_tag(ret_line_shift), "认知剪刀差": "➖"},
+                {"监控项": "上盘流速", "平博(Smart)": f"{eu_up_flow:+.4f}", "365(Retail)": f"{ret_up_flow:+.4f}", "认知剪刀差": f"{eu_up_flow - ret_up_flow:+.4f}"},
             ])
             st.dataframe(df_diff, hide_index=True, use_container_width=True)
             
-            diff_w = eu_w_flow - ret_w_flow
-            diff_l = eu_l_flow - ret_l_flow
-            
-            if eu_w_flow < -0.01 and ret_w_flow > 0.01:
-                cross_verdict = "🚨 **【致命认知差 / 散户火坑】**：全球聪明钱(平博)已经在坚决抛售主队，但本土零售(365)依然在强行压低赔率诱导散户接盘！认知差已经形成，散户正在被集中坑杀。主胜极大风险！"
-            elif eu_w_flow > 0.015 and ret_w_flow < 0:
-                cross_verdict = "💎 **【游资老鼠仓 / 信息差金矿】**：平博主胜大幅降水，主力已提前建仓；365反应迟钝或故意装死未降赔率，主胜存在极大的信息差红利，值得买入！"
-            elif eu_l_flow < -0.01 and ret_l_flow > 0.01:
-                cross_verdict = "🚨 **【客队诱捕陷阱】**：平博放弃客队，365极力造热客队，注意防范客队大热必死。"
-            elif eu_l_flow > 0.015 and ret_l_flow < 0:
-                cross_verdict = "💎 **【客负信息差】**：平博主力大举介入客胜，本土机构未及时跟进，客不败存在极高红利。"
-            elif abs(diff_w) < 0.010 and eu_w_flow > 0.015:
-                cross_verdict = "✅ **【全球共振一致】**：平博与365主胜同步大幅流入，主力与散户情绪达成完美共识，主队大热且真实防守。"
-            else:
-                cross_verdict = "⚪ **【常规博弈】**：机构间未见明显标盘认知剪刀差，情绪相对同步，属于合理物理波动。"
-                
-            st.warning(f"**【双轨 1X2 逻辑推演】**：{cross_verdict}")
+            st.markdown("#### 🗣️ 剪刀差对抗破译说明：")
+            st.write(f"👉 **1X2 标盘对抗**：")
+            st.write(f"　• 主胜：{get_cross_1x2_desc(eu_w_flow, ret_w_flow, '主胜')}")
+            st.write(f"　• 平局：{get_cross_1x2_desc(eu_d_flow, ret_d_flow, '平局')}")
+            st.write(f"　• 客负：{get_cross_1x2_desc(eu_l_flow, ret_l_flow, '客负')}")
+            st.write(f"👉 **亚盘水位与位移对抗**：")
+            st.write(f"　• {get_cross_ah_desc(eu_line_shift, ret_line_shift, eu_up_flow, ret_up_flow)}")
 
             st.markdown("---")
-            st.markdown("### 🚀 第五步：欧亚三维齿轮联动 (大结局指令)")
-            st.caption("综合【1X2流速】 + 【亚盘位移】 + 【亚盘水位】，执行 3D 全息定性。")
+            st.markdown("### 🚀 第五步：欧亚三维交叉定性雷达 (核心指令)")
+            st.caption("综合【标盘流速】 ✖️ 【亚盘位移】 ✖️ 【亚盘水位】，执行终极全息审判。")
             
             # --- 3D Correlation Logic Engine ---
+            # 锁定上盘对应的标盘胜负关系
             main_w_flow = eu_w_flow if is_home_up else eu_l_flow 
             main_ret_w_flow = ret_w_flow if is_home_up else ret_l_flow
             
@@ -403,44 +421,44 @@ if active_module == "🪐 模块八：M8 欧亚双轨全息对撞舱 (1X2+AH)":
             
             # Scenario 1: True Resonance (Strong)
             if main_w_flow > 0.015 and (eu_line_shift > 0 or (eu_line_shift == 0 and eu_up_flow > 0.015)):
-                verdict_box.success("### 🚀 【真龙现身：欧亚三维全息共振】\n\n"
-                                    f"**【数据异动】**：标盘上盘方纯率大幅上升 (+{main_w_flow*100:.1f}%) ➕ 亚指位移 ({describe_line(eu_line_shift)}) ➕ 亚指上盘水位流入 (+{eu_up_flow*100:.1f}%)\n\n"
-                                    "**【操盘手逻辑推演】**：标盘大幅降水示好上盘，制造热度的同时，决定生死的亚指并未放任筹码流入。它不但加深了让球门槛，连升盘后的水位都在严密设防！庄家在不惜代价阻挡上盘筹码，表里如一，毫无诱导破绽。\n\n"
-                                    "**【终极资金指令】**：✅ 顺大势，重锤上盘！")
+                verdict_box.success("### 🚀 【真龙现身 / 欧亚全息共振】\n\n"
+                                    f"**【数据异动】**：标盘上盘方被大幅扫货 (+{main_w_flow*100:.1f}%) ➕ 亚指加深壁垒 ({describe_line_tag(eu_line_shift)}) ➕ 亚指上盘水位流入 (+{eu_up_flow*100:.1f}%)\n\n"
+                                    "**【逻辑推演过程】**：标盘大幅降水示好上盘的同时，决定生死的亚指不但加深了让球门槛，连升盘后的水位都在严密设防！庄家不惜代价在阻挡上盘筹码，毫无诱导破绽。\n\n"
+                                    "**【🎯 终极裁决】**：顺大势重锤上盘 (实力碾压局)！")
             
             # Scenario 2: Fake Trap (Win but fail to cover / Upset)
             elif main_w_flow > 0.015 and (eu_line_shift < 0 or (eu_line_shift == 0 and eu_up_flow < -0.015)):
-                verdict_box.error("### 🚨 【声东击西：经典赢球输盘陷阱】\n\n"
-                                  f"**【数据异动】**：标盘上盘方纯率大幅上升 (+{main_w_flow*100:.1f}%) ➕ 亚指位移 ({describe_line(eu_line_shift)}) ➕ 亚指上盘水位流出 ({eu_up_flow*100:.1f}%)\n\n"
-                                  "**【操盘手逻辑推演】**：庄家在标盘疯狂压低上盘胜率，诱导全网散户形成‘稳赢’的共识；但在决定赢几个球的亚盘上，庄家却悄悄降低了让球门槛，甚至大幅拉高水位（退防放水）！这是极其恶劣的掩护撤退，引诱筹码去上盘送死。\n\n"
-                                  "**【终极资金指令】**：🩸 上盘极大概率最多赢一球（卡盘走水）甚至直接爆冷！坚决去下盘避险！")
+                verdict_box.error("### 🚨 【声东击西 / 经典赢球输盘陷阱】\n\n"
+                                  f"**【数据异动】**：标盘上盘方被大幅造热 (+{main_w_flow*100:.1f}%) ➕ 亚指门槛降低 ({describe_line_tag(eu_line_shift)}) ➕ 亚指上盘疯狂放水 ({eu_up_flow*100:.1f}%)\n\n"
+                                  "**【逻辑推演过程】**：庄家在标盘疯狂压低上盘胜率，诱导全网散户‘稳赢’；但在决定赢几个球的亚盘上，庄家却悄悄降低门槛并拉高水位（退防）！这是极度恶劣的引诱筹码去上盘送死。\n\n"
+                                  "**【🎯 终极裁决】**：极大概率最多赢一球 (卡盘走水) 甚至直接爆冷！坚决去下盘避险！")
                 
             # Scenario 3: Dark Water (Hidden Support)
             elif main_w_flow <= 0.01 and (eu_line_shift > 0 or (eu_line_shift == 0 and eu_up_flow > 0.02)):
-                verdict_box.info("### 🛡️ 【暗度陈仓：亚盘暗水筑墙】\n\n"
-                                 f"**【数据异动】**：标盘上盘方纯率未见明显热度 ({main_w_flow*100:.1f}%) ➕ 亚指强硬设防 ({describe_line(eu_line_shift)}) ➕ 亚指上盘水位大幅流入 (+{eu_up_flow*100:.1f}%)\n\n"
-                                 "**【操盘手逻辑推演】**：标盘故意维持高赔率装死，驱赶普通球迷的筹码；但最敏锐的亚盘防线却承受不住聪明钱（Smart Money）的冲击，被迫强行升盘筑墙或暴跌水位进行被动防御。\n\n"
-                                 "**【终极资金指令】**：💎 这是极其隐蔽的利好指标，庄家在暗中保护上盘。无脑冲上盘！")
+                verdict_box.info("### 🛡️ 【暗度陈仓 / 亚盘暗水筑墙】\n\n"
+                                 f"**【数据异动】**：标盘上盘方未见热度 ({main_w_flow*100:.1f}%) ➕ 亚指强硬升盘设防 ({describe_line_tag(eu_line_shift)}) ➕ 亚指上盘水位大幅流入 (+{eu_up_flow*100:.1f}%)\n\n"
+                                 "**【逻辑推演过程】**：标盘故意维持高赔率装死，驱赶普通球迷的筹码；但最敏锐的亚盘防线却承受不住聪明钱（Smart Money）的冲击，被迫强行升盘筑墙或暴跌水位进行被动防御。\n\n"
+                                 "**【🎯 终极裁决】**：隐蔽的绝对利好，庄家在暗中保护上盘。无脑冲上盘！")
                 
             # Scenario 4: Total Collapse
             elif main_w_flow < -0.02 and (eu_line_shift < 0 or (eu_line_shift == 0 and eu_up_flow < -0.02)):
-                verdict_box.warning("### 🧊 【防线坍塌：真实趋势反转】\n\n"
-                                    f"**【数据异动】**：标盘上盘方被大幅抛售 ({main_w_flow*100:.1f}%) ➕ 亚指门槛暴跌 ({describe_line(eu_line_shift)}) ➕ 亚指上盘水位流出 ({eu_up_flow*100:.1f}%)\n\n"
-                                    "**【操盘手逻辑推演】**：欧亚三维同步宣判上盘死刑。不仅标盘防线全面转向，亚盘甚至连原有的让球资格都大幅剥夺了。这不是诱导，这是基本面崩塌的真实反映。\n\n"
-                                    "**【终极资金指令】**：⏬ 下盘（受让方）极稳，顺势去下盘！")
+                verdict_box.warning("### 🧊 【防线坍塌 / 真实趋势反转】\n\n"
+                                    f"**【数据异动】**：标盘上盘方被坚决抛售 ({main_w_flow*100:.1f}%) ➕ 亚指门槛暴跌 ({describe_line_tag(eu_line_shift)}) ➕ 亚指上盘水位彻底流出 ({eu_up_flow*100:.1f}%)\n\n"
+                                    "**【逻辑推演过程】**：欧亚三维同步宣判上盘死刑。不仅标盘防线全面转向，亚盘甚至连原有的让球资格都大幅剥夺了。这不是诱导，这是基本面崩塌的真实反映。\n\n"
+                                    "**【🎯 终极裁决】**：下盘（受让方）稳如泰山，顺势拿客不败/下盘！")
                 
             # Cross-Track Analysis overriding if severe
             elif main_w_flow < -0.01 and main_ret_w_flow > 0.01:
-                verdict_box.error("### 🩸 【跨轨绞杀：顶级散户屠宰场】\n\n"
-                                  "**【特殊异动】**：出现了恐怖的“双轨认知剪刀差”！\n\n"
-                                  "**【操盘手逻辑推演】**：全球主力聪明钱（平博）已经在大幅抛弃上盘（降赔停止甚至拉升），但本土零售机构（365/马会）依然在强压赔率诱导散户接盘！庄家正在利用信息差集中收割散户。\n\n"
-                                  "**【终极资金指令】**：☠️ 极度危险！立刻逃离上盘！去下盘！")
+                verdict_box.error("### 🩸 【跨轨绞杀 / 顶级散户屠宰场】\n\n"
+                                  "**【特殊数据异动】**：出现了恐怖的“双轨认知剪刀差”！\n\n"
+                                  "**【逻辑推演过程】**：全球主力聪明钱（平博）已经在大幅抛弃上盘，但本土零售机构（365/马会）依然在强压赔率诱导散户接盘！庄家正在利用信息差集中收割散户。\n\n"
+                                  "**【🎯 终极裁决】**：极度危险！立刻逃离上盘！重注下盘！")
                 
             else:
-                verdict_box.markdown("### ⚖️ 【多空焦灼：常规物理博弈】\n\n"
+                verdict_box.markdown("### ⚖️ 【多空焦灼 / 常规物理博弈】\n\n"
                                      "**【数据异动】**：三维齿轮未出现明显的顺向或逆向极限偏离。\n\n"
-                                     "**【操盘手逻辑推演】**：标盘流速、亚盘位移与水位变化并未形成极端的撕裂或共振，双轨资金处于正常的市场换手波动。平博与365的步调基本一致，无明显的诱盘或挡盘破绽。\n\n"
-                                     "**【终极资金指令】**：⚪ 观望，或建议结合 M10 基本面/M9 张力雷达进行深度判定。")
+                                     "**【逻辑推演过程】**：标盘流速、亚盘位移与水位变化并未形成极端的撕裂或共振，双轨资金处于正常的市场换手波动。平博与365的步调基本一致，无明显的诱盘或挡盘破绽。\n\n"
+                                     "**【🎯 终极裁决】**：观望，或建议结合 M10 基本面/M9 张力雷达进行深度辅助判定。")
 
         except Exception as e:
             st.error("🚨 双轨计算异常，请检查输入的赔率是否有效。")
@@ -627,7 +645,6 @@ elif active_module == "🚀 模块十：斯巴达基本面AI预测舱 (M10)":
                     
             c_ah2.info(ah_verdict)
 
-
 # ==============================================================================
 # ===================== 🎯 模块七：全息连通器·深盘猎杀终端 =====================
 # ==============================================================================
@@ -671,7 +688,6 @@ elif active_module == "🎯 模块七：全息连通器·深盘猎杀终端 (V30
             _, _, _, _, _, P_mat = dixon_coles_full_matrix(xg_h, xg_a, -0.15)
             K_int = int(m7_k)
 
-            # 动态微积分区间
             bridge_val = 0.0
             if K_int < 0: bridge_val = sum(P_mat[h, a] for h in range(8) for a in range(8) if 0 < h - a < abs(K_int))
             elif K_int > 0: bridge_val = sum(P_mat[h, a] for h in range(8) for a in range(8) if 0 < a - h < K_int)
@@ -734,19 +750,6 @@ elif active_module == "🎯 模块七：全息连通器·深盘猎杀终端 (V30
             for i in range(6):
                 if p_all_d[i]>0: rmv[i] = round(residuals[i]/p_all_d[i], 4)
 
-            p_math_std_w = sum(P_mat[h, a] for h in range(8) for a in range(8) if h > a)
-            p_math_std_d = sum(P_mat[h, a] for h in range(8) for a in range(8) if h == a)
-            p_math_std_l = sum(P_mat[h, a] for h in range(8) for a in range(8) if h < a)
-            p_math_let_w = sum(P_mat[h, a] for h in range(8) for a in range(8) if h - a > -K_int)
-            p_math_let_d = sum(P_mat[h, a] for h in range(8) for a in range(8) if h - a == -K_int)
-            p_math_let_l = sum(P_mat[h, a] for h in range(8) for a in range(8) if h - a < -K_int)
-            p_math_all = np.round([p_math_std_w, p_math_std_d, p_math_std_l, p_math_let_w, p_math_let_d, p_math_let_l], 4)
-            
-            odds_d_all = np.zeros(6)
-            if not is_all_std_closed: odds_d_all[0:3] = std_d
-            odds_d_all[3:6] = let_d
-            ev_all = np.round(odds_d_all * p_math_all - 1.0, 4)
-
             verdicts, scripts, intra = [], [], []
             lie_r_show, rmv_show = [], []
             
@@ -759,7 +762,7 @@ elif active_module == "🎯 模块七：全息连通器·深盘猎杀终端 (V30
                     scripts.append("底层已自动代入泊松物理纯率作为镜像支点。")
                     continue
 
-                flow, res, r, ev = d_all[i], residuals[i], rmv[i], ev_all[i]
+                flow, res, r = d_all[i], residuals[i], rmv[i]
                 
                 if flow > 0.025: intra.append("🔥 主力真金狂买")
                 elif flow < -0.025: intra.append("🕳️ 筹码夺路出逃")
@@ -775,8 +778,6 @@ elif active_module == "🎯 模块七：全息连通器·深盘猎杀终端 (V30
 
                 is_lie = res > dyn_thresh and r > 0.04
                 is_gold = res < -dyn_thresh and r < -0.04
-                is_poison = not pd.isna(ev) and ev < -0.1600
-                is_deep_val = not pd.isna(ev) and ev > 0.0150
 
                 if is_lie:
                     verdicts.append("🚨 镜像畸高 (造热死坑)")
@@ -788,12 +789,6 @@ elif active_module == "🎯 模块七：全息连通器·深盘猎杀终端 (V30
                     else:
                         verdicts.append("🧊 镜像被弃死冷")
                         scripts.append("传动链与市场流速同步宣判死刑，冷门通道已被封焊。")
-                elif is_poison:
-                    verdicts.append("🩸 负EV抽水深渊")
-                    scripts.append("体彩在此抽水率极度丧心病狂，买入即亏损，纯属送钱位。")
-                elif is_deep_val:
-                    verdicts.append("🌟 物理期望金矿")
-                    scripts.append("开出赔率远高于泊松概率，具备正向价值！")
                 else:
                     if flow >= 0.0250:
                         verdicts.append("✅ 明牌顺势御流位")
@@ -820,27 +815,6 @@ elif active_module == "🎯 模块七：全息连通器·深盘猎杀终端 (V30
                 "精算审讯结论": scripts
             })
             st.dataframe(df_out_m7, hide_index=True, use_container_width=True)
-
-            st.markdown("---")
-            st.markdown("### 🛰️ V30 深盘定向卷·军情雷达板")
-            
-            gap_slice_1 = bridge_val
-            gap_slice_2 = p_let_d[1] 
-            gap_ratio = gap_slice_1 / max(gap_slice_2, 0.0001)
-
-            r1, r2, r3 = st.columns(3)
-            r1.metric("⚖️ 胜负势能张力轴", f"{(p_all_d[0]-p_all_d[2])*100:+.1f}%", delta="主队占优" if p_all_d[0]>p_all_d[2] else "客队占优")
-            r2.metric(f"🕳️ 赢{abs(K_int)-1}球 vs 赢{abs(K_int)}球 绞杀比", f"{gap_ratio:.2f} 倍", help="若倍率极大，说明卡盘绝杀概率极高")
-            
-            flow_main = d_all[0] if K_int<0 else d_all[2]
-            res_main = residuals[0] if K_int<0 else residuals[2]
-            
-            if flow_main >= 0.035 and abs(res_main) < 0.012:
-                r3.success("定性：🚀 **教科书级物理公平盘 (顺流直冲)**\n\n核心项流速 ≥ 3.5% (主力扫货)，且残差极小，量价齐升不设防，顺大势重锤。")
-            elif residuals[3 if K_int<0 else 5] < -0.015:
-                r3.warning("定性：🎁 **底层暗水偷袭局 (去让球端)**\n\n底层核心让球防线出现 < -1.5% 负残差，庄家顶流速压赔，筑墙保护下盘。")
-            else:
-                r3.info("定性：⚖️ **多空精算焦灼对冲局**\n\n全盘残差未触极端红线，多空绞杀稳态，无破绽。")
 
         except Exception as e:
             st.error("🚨 模块七微创运行异常。")
@@ -884,14 +858,6 @@ elif active_module == "🔥 模块X：全息综合引擎 (M1+M3+M4)":
 
             st.markdown("---")
             st.markdown(f"## ⚔️ 第一维：{wl}欧亚基础底座透视")
-            
-            ret_c = round(1.0 / np.nansum(1.0 / c_odds[0:3]), 4) if not pd.isna(c_odds[0:3]).any() else 1.0
-            ret_d = round(1.0 / np.nansum(1.0 / d_odds[0:3]), 4) if not pd.isna(d_odds[0:3]).any() else 1.0
-            theo_odds = np.round(c_odds * (ret_d / ret_c), 4) if ret_c != 0 else c_odds
-            dev = np.round(d_odds - theo_odds, 4)
-            
-            heat = np.where(pd.isna(delta), "➖", np.where(delta >= z2, "🌋 极限防范", np.where(delta >= z3, "🔥 显著设防", np.where(delta >= z4, "📈 温和流入", np.where(delta <= -z2, "🧊 极限抛弃", np.where(delta <= -z3, "📉 显著看衰", np.where(delta <= -z4, "↘️ 温和流出", "⚪ 随机噪音")))))))
-            filter_q = np.where(pd.isna(dev), "➖", np.where(dev < -0.02, "🩸 暴击防范(狠)", np.where(dev < 0, "📉 真实降水", np.where((dev > 0) & (d_odds < c_odds), "🚨 虚假降水", np.where(dev > 0, "📈 真实升水", "⚪ 平稳")))))
             
             s_theo, u_theo = np.full(6, np.nan), np.full(6, np.nan)
             t_open, v_open, w_traj, aa_hedge = ["⚪ 无对照"]*6, ["⚪ 无对照"]*6, ["⚪ 无对照"]*6, ["⚪ 动量未达标"]*6
@@ -944,23 +910,8 @@ elif active_module == "🔥 模块X：全息综合引擎 (M1+M3+M4)":
                         elif struct <= -z3: aa_hedge[i] = "🕸️ 静态诱网"
                         else: aa_hedge[i] = "⚪ 动量未达标"
 
-            out_main = pd.DataFrame({"选项": opts_m1, "初纯净概率": prob_c, "临纯净概率": prob_d, "动量(Delta)": delta, "热度测算": heat, "净抽水偏离": dev, "返还率滤镜": filter_q, "底座概率": s_theo, "初盘定性": t_open, "轨迹研判": w_traj, "时空双杀(改良版)": aa_hedge})
+            out_main = pd.DataFrame({"选项": opts_m1, "初纯净概率": prob_c, "临纯净概率": prob_d, "动量(Delta)": delta, "底座概率": s_theo, "初盘定性": t_open, "轨迹研判": w_traj, "时空双杀(改良版)": aa_hedge})
             st.dataframe(out_main.fillna(""), hide_index=True, use_container_width=True)
-
-            ranks = pd.Series(delta).rank(method='min', ascending=False).values 
-            refiner_text = []
-            for i in range(6):
-                r, d, odd = ranks[i], delta[i], c_odds[i]
-                if pd.isna(d): txt = "➖"
-                elif r == 1: txt = "🌋 史诗级重防" if d >= z2*1.5 else "🌋 绝对防范极值" if d >= z2 else "🔥 首席主防" if d >= z3 else "🟡 相对领跑" if d >= z4 else "📈 微弱榜首" if d >= z5 else "⚪ 虚空榜首"
-                elif d > 0: txt = "💣 史诗级暗盘" if d >= z2*1.5 else "💣 隐蔽杀机" if d >= z2 else "🛡️ 独立重防" if d >= z3 else "📈 顺流吸筹" if d >= z4 else "↗️ 温和介入" if d >= z5 else "⚪ 边缘流入"
-                elif odd >= z6: txt = "🎭 终极恐吓" if d <= -z2*1.5 else "🚧 高赔壁垒" if d <= -z2 else "📉 顺势驱赶" if d <= -z3 else "↘️ 显著退热" if d <= -z4 else "⏬ 微幅流失" if d <= -z5 else "⚪ 自然震荡"
-                else: txt = "🩸 绝望深渊" if d <= -z2*1.5 else "🧊 极限绞杀" if d <= -z2 else "📉 坚决抛弃" if d <= -z3 else "↘️ 显著退热" if d <= -z4 else "⏬ 微幅流失" if d <= -z5 else "⚪ 自然震荡"
-                refiner_text.append(txt)
-                
-            out_refiner = pd.DataFrame({"提纯选项": opts_m1, "偏移量": delta, "热度排名": ranks, "单项研判": refiner_text})
-            st.markdown("#### 🥇 顺流资金共识提纯器")
-            st.dataframe(out_refiner.fillna(""), hide_index=True, use_container_width=True)
 
             st.markdown("---")
             st.markdown("## 🎫 第二维：DC双泊松高阶价值提纯")
@@ -993,7 +944,7 @@ elif active_module == "🔥 模块X：全息综合引擎 (M1+M3+M4)":
 
             st.markdown("---")
             st.markdown("## 🧬 第三维：终极异构验证与对冲引擎")
-            tab_m4_a, tab_m4_b, tab_m4_c = st.tabs(["🔍 亚盘 vs xG 撕裂检测", "🏦 机构暗水剥离 (凯利敞口)", "⚖️ 荷兰式对冲"])
+            tab_m4_a, tab_m4_b = st.tabs(["🔍 亚盘 vs xG 撕裂检测", "🏦 机构暗水剥离 (凯利敞口)"])
             with tab_m4_a:
                 xg_diff = round(xg_h_m3 - xg_a_m3, 4)
                 c1_m4, c2_m4, c3_m4 = st.columns(3)
@@ -1017,20 +968,6 @@ elif active_module == "🔥 模块X：全息综合引擎 (M1+M3+M4)":
                     st.dataframe(df_kelly, hide_index=True, use_container_width=True)
                     max_idx = int(np.argmax(liability_m4))
                     st.error(f"💣 **暗水警报：** 机构对 **【{['主胜', '平局', '客胜'][max_idx]}】** 敞口最敏感！")
-
-            with tab_m4_c:
-                c1_4c, c2_4c, c3_4c = st.columns(3)
-                with c1_4c: total_cap = safe_number_input("💰 资金", f"m4_c_{match_id}_{wl}", 1000.0, format="%.0f", step=100.0)
-                with c2_4c: oa = safe_number_input("赔率 A", f"m4_a_{match_id}_{wl}", 2.00, format="%.2f", step=0.01)
-                with c3_4c: ob = safe_number_input("赔率 B", f"m4_b_{match_id}_{wl}", 3.00, format="%.2f", step=0.01)
-                if oa > 1 and ob > 1:
-                    sa = ( (1/oa) / (1/oa + 1/ob) ) * total_cap
-                    sb = ( (1/ob) / (1/oa + 1/ob) ) * total_cap
-                    pr = (sa * oa) - total_cap
-                    col_r1, col_r2, col_r3 = st.columns(3)
-                    col_r1.success(f"**买 A：** `{sa:.2f}` 元"); col_r2.success(f"**买 B：** `{sb:.2f}` 元")
-                    if pr > 0: col_r3.info(f"**保底润：** `+{pr:.2f}` 元")
-                    else: col_r3.error(f"**损耗：** `{pr:.2f}` 元")
 
     with tab_mx_1: render_module_x_ui("浅水区", current_match)
     with tab_mx_2: render_module_x_ui("中水区", current_match)
