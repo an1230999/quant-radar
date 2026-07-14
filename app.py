@@ -858,30 +858,25 @@ elif active_module == "🔥 模块X：全息综合引擎 (M1+M3+M4)":
             st.markdown("---")
             st.markdown(f"## ⚔️ 第一维：{wl}欧亚基础底座透视")
             
-            # 🚀 核心升级：计算返还率与残差
             ret_rate_c_std = np.nansum(1.0 / c_odds[0:3])
             ret_rate_d_std = np.nansum(1.0 / d_odds[0:3])
-            ret_rate_c_let = np.nansum(1.0 / c_odds[3:6])
-            ret_rate_d_let = np.nansum(1.0 / d_odds[3:6])
             
-            # 🚀 核心升级：动态阈值计算，解决满屏⚪问题
+            # 🚀 核心修复1：降低动态阈值乘数，防止屏蔽真实异动
             vol = np.nanstd(delta)
-            dyn_z3 = max(round(vol * 1.5, 4), 0.0040)
-            dyn_z4 = max(round(vol * 2.0, 4), 0.0060)
-            st.info(f"📊 本场动态自适应阈值：显著流込阈值 Z3={dyn_z3:.4f} | 核心结构阈值 Z4={dyn_z4:.4f} (原静态阈值已废弃)")
+            dyn_z3 = min(max(round(vol * 0.8, 4), 0.0040), 0.0150)  # 上限锁死15%，下限保底0.4%，乘数降为0.8
+            dyn_z4 = min(max(round(vol * 1.2, 4), 0.0060), 0.0200)  # 上限锁死20%，下限保底0.6%，乘数降为1.2
+            st.info(f"📊 本场动态自适应阈值：显著流込阈值 Z3={dyn_z3:.4f} | 核心结构阈值 Z4={dyn_z4:.4f}")
  
             s_theo, u_theo = np.full(6, np.nan), np.full(6, np.nan)
             t_open, v_open, w_traj, aa_hedge = ["⚪ 无对照"]*6, ["⚪ 无对照"]*6, ["⚪ 无对照"]*6, ["⚪ 动量未达标"]*6
             
             h_val = mx_hcp_bookie
-            # 🚀 核心修复：限定特定K值的守恒映射
-            if h_val < 0 and abs(mx_k + 1.0) < 0.01:  # 仅主让1球适用
+            if h_val < 0 and abs(mx_k + 1.0) < 0.01: 
                 s_theo[0], u_theo[0] = prob_c[3] + prob_c[4], prob_d[3] + prob_d[4]
                 s_theo[2], u_theo[2] = prob_c[5], prob_d[5]
-            elif h_val > 0 and abs(mx_k - 1.0) < 0.01: # 仅客让1球适用
+            elif h_val > 0 and abs(mx_k - 1.0) < 0.01: 
                 s_theo[2], u_theo[2] = prob_c[4] + prob_c[5], prob_d[4] + prob_d[5]
                 s_theo[0], u_theo[0] = prob_c[3], prob_d[3]
-            # 其他情况保持NaN，避免逻辑错乱
  
             s_theo, u_theo = np.round(s_theo, 4), np.round(u_theo, 4)
             max_delta_val = np.nanmax(delta) if not pd.isna(delta).all() else 0
@@ -896,7 +891,6 @@ elif active_module == "🔥 模块X：全息综合引擎 (M1+M3+M4)":
                     traj = diff_d - diff_c
                     w_traj[i] = "🚨 剧烈砸盘" if traj >= 0.02 else "📉 步步紧逼" if traj >= 0.01 else "🚨 疯狂拉高" if traj <= -0.02 else "📈 门槛放宽" if traj <= -0.01 else "⚪ 伪装平稳"
                     struct = round(diff_d, 4)
-                    # 🚀 核心修复：解除极值死锁，采用动态阈值
                     is_dominant = (delta[i] == max_delta_val) or (delta[i] == min_delta_val)
                     if delta[i] >= dyn_z3: 
                         if is_dominant: aa_hedge[i] = "✅ 黄金共振(核心轴)" if struct >= dyn_z4 else "🚨 致命背离(造热核心)" if struct <= -dyn_z4 else "🟡 主流流入"
@@ -912,8 +906,6 @@ elif active_module == "🔥 模块X：全息综合引擎 (M1+M3+M4)":
             out_main = pd.DataFrame({"选项": opts_m1, "初纯净概率": prob_c, "临纯净概率": prob_d, "动量": delta, "底座概率": s_theo, "初盘定性": t_open, "轨迹研判": w_traj, "时空双杀(改良版)": aa_hedge})
             st.dataframe(out_main.fillna(""), hide_index=True, use_container_width=True)
  
-            # ============ 🚀 新增：机构意图分类器 ============
-            # 计算标盘守恒残差
             res_std_w = prob_d[0] - (prob_d[3] + prob_d[4]) if abs(mx_k + 1.0) < 0.01 else 0
             res_let_l = prob_d[5] - (prob_d[1] + prob_d[2]) if abs(mx_k + 1.0) < 0.01 else 0
             max_residual = max(abs(res_std_w), abs(res_let_l))
@@ -944,21 +936,35 @@ elif active_module == "🔥 模块X：全息综合引擎 (M1+M3+M4)":
                 st.warning(warning)
             st.info(f"诊断结论：**{intent}** | 返还率变动: {margin_shift*100:+.2f}% | 跨盘最大残差: {max_residual:.4f}")
  
-            # ============ 🚀 新增：6项联合交叉诊断引擎 ============
+            # 🚀 核心修复2：增强6项联合诊断，针对截图中的“标平涨、让平跌”等典型剧本做专项破译
             def cross_six_diagnosis(d_w, d_d, d_l, d_lw, d_ld, d_ll, K):
                 verdict = "⚪ 常规物理博弈，6项流速基本同步。"
+                
+                # 剧本1：一球小胜铁幕
                 cond1 = (d_w < -0.01 and d_lw < -0.01 and abs(d_ld) < 0.003 and 
                          d_d > 0.01 and d_ll > 0.01 and abs(d_l) < 0.003)
                 if cond1 and K == -1.0:
-                    verdict = "🚨 【一球小胜铁幕/卡盘剧本】标胜与让胜双降，但让平死守不动；同时平局与让负被拉高驱赶资金。机构极度防范主队刚好赢1球！防1-0, 2-1。"
+                    return "🚨 【一球小胜铁幕/卡盘剧本】标胜与让胜双降，但让平死守不动；同时平局与让负被拉高驱赶资金。机构极度防范主队刚好赢1球！防1-0, 2-1。"
+ 
+                # 剧本2：标盘虚空造热
                 cond2 = (d_w < -0.015 and d_lw > 0 and d_ld > 0)
                 if cond2:
-                    verdict = "⚠️ 【标盘虚空造热】标胜疯狂降水，但底层让球盘（让胜+让平）却在升水流失。庄家在标盘强造主胜热点吸纳散户，真金未流入让盘。极度危险，防冷门！"
+                    return "⚠️ 【标盘虚空造热】标胜疯狂降水，但底层让球盘（让胜+让平）却在升水流失。庄家在标盘强造主胜热点吸纳散户，真金未流入让盘。极度危险，防冷门！"
+ 
+                # 剧本3：主队全面崩塌
                 cond3 = (d_w > 0.02 and d_d > 0.02 and d_l < -0.015 and d_ll < -0.015)
                 if cond3:
-                    verdict = "🩸 【主队全面崩塌】标胜、标平同步遭到抛售，资金全数涌入客队不败（标负/让负）。基本面大概率发生未公开的巨变，直接去下盘！"
+                    return "🩸 【主队全面崩塌】标胜、标平同步遭到抛售，资金全数涌入客队不败（标负/让负）。基本面大概率发生未公开的巨变，直接去下盘！"
+ 
+                # 🚀 新增剧本4：平局大热，让球盘反向撤离 (精准打击你截图中的数据特征)
+                cond4 = (d_d > 0.015 and d_ld < -0.01)
+                if cond4:
+                    return "🎯 【平局真实大热 / 赢球输盘预警】标盘平局概率暴增，但让球盘的让平却在大幅流出！这说明机构极度畏惧直接打出平局（标平），但在让球盘上却不怕赢一球。此剧本下，如果是主让球，防主队刚好赢1球（让平打出）或直接冷平！"
+                
+                # 剧本5：跨盘守恒撕裂
                 if abs(res_std_w) > 0.015 or abs(res_let_l) > 0.015:
-                    verdict = "🛡️ 【跨盘守恒律撕裂】6项概率的物理等式发生严重偏移（暗流残差突破1.5%）。机构在跨盘进行非对称对冲，存在强烈的内幕交易对冲行为，建议结合M3底座寻找价值盲区。"
+                    return "🛡️ 【跨盘守恒律撕裂】6项概率的物理等式发生严重偏移（暗流残差突破1.5%）。机构在跨盘进行非对称对冲，存在强烈的内幕交易对冲行为，建议结合M3底座寻找价值盲区。"
+                
                 return verdict
  
             st.markdown("#### 🧬 6项联合交叉诊断 (终极剧本破译)")
