@@ -858,7 +858,7 @@ elif active_module == "🔥 模块X：全息综合引擎 (M1+M3+M4)":
             st.markdown("---")
             st.markdown(f"## ⚔️ 第一维：{wl}欧亚基础底座透视")
             
-  # 🚀 终极修复1：直接用泊松底座为所有6项生成底座概率，彻底解决缺失和双杀失效！
+            # 🚀 终极修复1：直接用泊松底座为所有6项生成底座概率，彻底解决缺失和双杀失效！
             xg_h_m3, xg_a_m3 = (mx_tg - mx_hcp_math) / 2, (mx_tg + mx_hcp_math) / 2
             if xg_h_m3 < 0 or xg_a_m3 < 0:
                 st.error("⚠️ 预期进球为负，请检查 M3 底座参数设置！")
@@ -915,7 +915,8 @@ elif active_module == "🔥 模块X：全息综合引擎 (M1+M3+M4)":
             out_main = pd.DataFrame({"选项": opts_m1, "初纯净概率": prob_c, "临纯净概率": prob_d, "动量": delta, "底座概率": s_theo, "初盘定性": t_open, "终盘定性": v_open, "轨迹研判": w_traj, "时空双杀(改良版)": aa_hedge})
             st.dataframe(out_main.fillna(""), hide_index=True, use_container_width=True)
  
- res_std_w = prob_d[0] - (prob_d[3] + prob_d[4]) if abs(mx_k + 1.0) < 0.01 else 0
+            # ================= 机构意图分类器 =================
+            res_std_w = prob_d[0] - (prob_d[3] + prob_d[4]) if abs(mx_k + 1.0) < 0.01 else 0
             res_let_l = prob_d[5] - (prob_d[1] + prob_d[2]) if abs(mx_k + 1.0) < 0.01 else 0
             max_residual = max(abs(res_std_w), abs(res_let_l))
             
@@ -952,7 +953,7 @@ elif active_module == "🔥 模块X：全息综合引擎 (M1+M3+M4)":
                 st.warning(warning)
             st.info(f"诊断结论：**{intent}** | 返还率变动: {margin_shift*100:+.2f}% | 跨盘最大残差: {max_residual:.4f}")
  
-            # 🚀 终极修复2：重写6项联合诊断，精准打击截图中的异动特征
+            # ================= 6项联合交叉诊断引擎 =================
             def cross_six_diagnosis(d_w, d_d, d_l, d_lw, d_ld, d_ll, K):
                 # 剧本1：一球小胜铁幕
                 cond1 = (d_w < -0.01 and d_lw < -0.01 and abs(d_ld) < 0.003 and 
@@ -970,7 +971,7 @@ elif active_module == "🔥 模块X：全息综合引擎 (M1+M3+M4)":
                 if cond3:
                     return "🩸 【主队全面崩塌】标胜、标平同步遭到抛售，资金全数涌入客队不败（标负/让负）。基本面大概率发生未公开的巨变，直接去下盘！"
  
-                # 🚀 新增剧本4：平局/客胜双轨异动 (精准打击截图中的特征：标平涨，让平没动，让负涨)
+                # 🚀 新增剧本4：平局/客胜双轨异动 (精准打击标平涨，让平没动，让负涨)
                 cond4 = (d_d > 0.015 and d_ld < 0.005 and d_ll > 0.01)
                 if cond4:
                     return "🎯 【平局/客不败双轨异动】标盘平局概率暴增，但让球盘让平未跟随，且让负大幅流入！资金在标盘防平，在让球盘防客队不败。主队赢球概率被双向看衰，防冷平或客胜！"
