@@ -819,7 +819,7 @@ elif active_module == "🎯 模块七：全息连通器·深盘猎杀终端 (V30
             st.error("🚨 模块七微创运行异常。")
             st.code(traceback.format_exc())
  
-	# ==============================================================================
+# ==============================================================================
 # ===================== 🔥 模块X：全息综合引擎 (M1+M3+M4) =====================
 # ==============================================================================
 elif active_module == "🔥 模块X：全息综合引擎 (M1+M3+M4)":
@@ -934,16 +934,17 @@ elif active_module == "🔥 模块X：全息综合引擎 (M1+M3+M4)":
             
             intent, warning = "未知", ""
             
-            # 🚨 新增最高优先级：绝对信息优势通杀局 (量子纠缠态)
-            # 特征：某选项极限升水(动量<-0.04) + 机构不缩表反升返还(>0) + 跨盘残差极小(<0.005)
-            # 此时机构不惧怕任何赔付，不是在诱导，而是在捂盖子防聪明钱！
+            # 🚨 最高优先级：绝对信息优势通杀局 (量子纠缠态)
             is_extreme_raise = max_raise_val > 0.04
+            # 🚀 新增：温和全面通杀判定 (标胜、标平、让胜全部温和升水)
+            is_soft_liquidation = (delta[0] < -0.005 and delta[1] < -0.005 and delta[3] < -0.005 and max_raise_val > 0.015)
             is_perfect_hedge = max_residual < 0.005
             is_margin_not_shrinking = margin_shift >= 0
             
-            if is_extreme_raise and is_perfect_hedge and is_margin_not_shrinking:
+            # 触发条件：极端单点升水 OR 温和全面升水，只要配合完美残差和不缩表，就是通杀！
+            if (is_extreme_raise or is_soft_liquidation) and is_perfect_hedge and is_margin_not_shrinking:
                 intent = "量子纠缠态 (机构通杀局)"
-                warning = f"🚨 **【极危警告：放弃常规逻辑】**\n\n【{opt_raise_name}】出现极限升水(动量 {delta[idx_raise]:+.4f})，但跨盘守恒残差仅为 {max_residual:.4f}，且机构返还率不降反升(+{margin_shift*100:.2f}%)！\n\n这不再是常规的资金诱导或防范。机构百分百确知结果，正在利用完美数学模型将散户资金系统性锁死在错误选项。此时买谁都是赌博，**强烈建议直接放弃本场比赛，或极小注博弈高赔冷门！**"
+                warning = f"🚨 **【极危警告：放弃常规逻辑】**\n\n盘口出现全方位升水流出(最大动量 {delta[idx_raise]:+.4f})，但跨盘守恒残差仅为 {max_residual:.4f}，且机构返还率不降反升(+{margin_shift*100:.2f}%)！\n\n这不再是常规的资金诱导或防范。机构控盘极度精准且自信，正在利用完美数学模型将散户资金系统性锁死在错误选项(大概率流向低赔大热方)。此时买谁都是赌博，**强烈建议直接放弃本场比赛，或极小注博弈高赔冷门！**"
             
             elif margin_shift < -0.0200:
                 intent = "资金平衡局 (机构不确定)"
