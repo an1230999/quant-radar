@@ -894,7 +894,6 @@ elif active_module == "🔥 模块X：全息综合引擎 (M1+M3+M4)":
                 if not pd.isna(s_t) and not pd.isna(u_t) and not pd.isna(c_prob):
                     diff_c, diff_d = c_prob - s_t, d_prob - u_t
                     t_open[i] = "🔻 极限低开" if diff_c >= z2 else "📉 显著低开" if diff_c >= z3 else "🔺 极限高开" if diff_c <= -z2 else "📈 显著高开" if diff_c <= -z3 else "⚪ 体系平衡"
-                    # 🚀 修复：新增终盘定性展示
                     v_open[i] = "🔻 极限低开" if diff_d >= z2 else "📉 显著低开" if diff_d >= z3 else "🔺 极限高开" if diff_d <= -z2 else "📈 显著高开" if diff_d <= -z3 else "⚪ 体系平衡"
                     traj = diff_d - diff_c
                     w_traj[i] = "🚨 剧烈砸盘" if traj >= 0.02 else "📉 步步紧逼" if traj >= 0.01 else "🚨 疯狂拉高" if traj <= -0.02 else "📈 门槛放宽" if traj <= -0.01 else "⚪ 伪装平稳"
@@ -911,7 +910,6 @@ elif active_module == "🔥 模块X：全息综合引擎 (M1+M3+M4)":
                         elif struct <= -dyn_z3: aa_hedge[i] = "🕸️ 静态诱网"
                         else: aa_hedge[i] = "⚪ 动量未达标"
  
-            # 🚀 修复：在 DataFrame 中加入终盘定性列
             out_main = pd.DataFrame({"选项": opts_m1, "初纯净概率": prob_c, "临纯净概率": prob_d, "动量": delta, "底座概率": s_theo, "初盘定性": t_open, "终盘定性": v_open, "轨迹研判": w_traj, "时空双杀(改良版)": aa_hedge})
             st.dataframe(out_main.fillna(""), hide_index=True, use_container_width=True)
  
@@ -923,28 +921,36 @@ elif active_module == "🔥 模块X：全息综合引擎 (M1+M3+M4)":
             margin_shift = ret_rate_d_std - ret_rate_c_std
             positive_flows = np.sum(delta > 0.005)
             
-            # 找到大幅升水（资金流出最多）的选项名称
             max_raise_val = np.max(-delta)
             idx_raise = int(np.argmin(delta))
             opt_raise_name = opts_m1[idx_raise]
-            # 找到大幅降水（资金流入最多）的选项名称
             max_drop_val = np.max(delta)
             idx_drop = int(np.argmax(delta))
             opt_drop_name = opts_m1[idx_drop]
             
             intent, warning = "未知", ""
             
-            # 🚨 最高优先级：绝对信息优势通杀局 (量子纠缠态)
-            is_extreme_raise = max_raise_val > 0.04
-            # 🚀 新增：温和全面通杀判定 (标胜、标平、让胜全部温和升水)
-            is_soft_liquidation = (delta[0] < -0.005 and delta[1] < -0.005 and delta[3] < -0.005 and max_raise_val > 0.015)
-            is_perfect_hedge = max_residual < 0.005
-            is_margin_not_shrinking = margin_shift >= 0
+            # 🚨 通用版：虚假大热诱导局 (基于资金流向与底座概率的背离，双向通用识别)
+            # 核心逻辑：标盘某方向降水(动量>0.015)造热，但底座概率不足50%，且对应让盘反方向升水(动量<-0.015)掩护
+            is_home_fake_heat = (delta[0] > 0.015 and s_theo[0] < 0.50 and delta[5] < -0.015)
+            is_away_fake_heat = (delta[2] > 0.015 and s_theo[2] < 0.50 and delta[3] < -0.015)
             
-            # 触发条件：极端单点升水 OR 温和全面升水，只要配合完美残差和不缩表，就是通杀！
-            if (is_extreme_raise or is_soft_liquidation) and is_perfect_hedge and is_margin_not_shrinking:
+            if is_home_fake_heat:
+                intent = "虚假大热局 (低赔诱导)"
+                warning = f"⚠️ **【危险预警：主队虚假大热】**\n\n标盘主胜发生降水(动量{delta[0]:+.4f})制造必胜假象，但底座推演主胜概率仅为{s_theo[0]*100:.1f}%（不足50%），并无碾压优势！同时底层让负赔率却在升水(动量{delta[5]:+.4f})掩护。\n\n机构利用标盘降水吸纳主队筹码，真实意图是主队大概率赢不了。**坚决规避主胜及让胜，防范客队不败！**"
+            elif is_away_fake_heat:
+                intent = "虚假大热局 (低赔诱导)"
+                warning = f"⚠️ **【危险预警：客队虚假大热】**\n\n标盘客胜发生降水(动量{delta[2]:+.4f})制造必胜假象，但底座推演客胜概率仅为{s_theo[2]*100:.1f}%（不足50%），并无碾压优势！同时底层让胜赔率却在升水(动量{delta[3]:+.4f})掩护。\n\n机构利用标盘降水吸纳客队筹码，真实意图是客队大概率赢不了。**坚决规避客胜及让负，防范主队不败！**"
+            
+            # 🚨 最高优先级：绝对信息优势通杀局 (量子纠缠态)
+            elif max_raise_val > 0.04 and max_residual < 0.005 and margin_shift >= 0:
                 intent = "量子纠缠态 (机构通杀局)"
-                warning = f"🚨 **【极危警告：放弃常规逻辑】**\n\n盘口出现全方位升水流出(最大动量 {delta[idx_raise]:+.4f})，但跨盘守恒残差仅为 {max_residual:.4f}，且机构返还率不降反升(+{margin_shift*100:.2f}%)！\n\n这不再是常规的资金诱导或防范。机构控盘极度精准且自信，正在利用完美数学模型将散户资金系统性锁死在错误选项(大概率流向低赔大热方)。此时买谁都是赌博，**强烈建议直接放弃本场比赛，或极小注博弈高赔冷门！**"
+                warning = f"🚨 **【极危警告：放弃常规逻辑】**\n\n【{opt_raise_name}】出现极限升水(动量 {delta[idx_raise]:+.4f})，但跨盘守恒残差仅为 {max_residual:.4f}，且机构返还率不降反升(+{margin_shift*100:.2f}%)！\n\n这不再是常规的资金诱导或防范。机构控盘极度精准且自信，正在利用完美数学模型将散户资金系统性锁死在错误选项。此时买谁都是赌博，**强烈建议直接放弃本场比赛，或极小注博弈高赔冷门！**"
+            
+            # 🚀 新增：温和全面通杀判定 (标胜、标平、让胜全部温和升水)
+            elif (delta[0] < -0.005 and delta[1] < -0.005 and delta[3] < -0.005 and max_raise_val > 0.015) and max_residual < 0.005 and margin_shift >= 0:
+                intent = "量子纠缠态 (机构温和通杀)"
+                warning = f"🚨 **【极危警告：温水煮青蛙】**\n\n盘口出现全方位温和升水流出(最大动量 {delta[idx_raise]:+.4f})，但跨盘守恒残差仅为 {max_residual:.4f}，且机构返还率不降反升(+{margin_shift*100:.2f}%)！\n\n这不再是常规的资金诱导。机构控盘极度精准，正在利用完美数学模型将散户资金系统性锁死在低赔大热方。**强烈建议直接放弃本场比赛，或极小注博弈高赔冷门！**"
             
             elif margin_shift < -0.0200:
                 intent = "资金平衡局 (机构不确定)"
@@ -954,7 +960,7 @@ elif active_module == "🔥 模块X：全息综合引擎 (M1+M3+M4)":
                 intent = "资金失衡局 (散户倒逼)"
                 warning = f"⚠️ 跨盘口守恒律被撕裂，且多选项同步降水！这是散户单边狂热倒逼机构被动调盘。机构并未主动设防，此时'大热必死'概率极高。"
             
-            elif positive_flows <= 2 and max_raise_val > 0.015 and max_residual < 0.0100:
+            elif positive_flows <= 2 and max_drop_val > 0.015 and max_residual < 0.0100:
                 intent = "信息优势局 (机构确知)"
                 warning = f"💎 机构控盘精准，针对【{opt_drop_name}】进行极限降水，且跨盘口残差极小。这是机构掌握了内幕信息的主动设防，原模型定性逻辑置信度最高！"
             
@@ -966,10 +972,9 @@ elif active_module == "🔥 模块X：全息综合引擎 (M1+M3+M4)":
             st.markdown("#### 🕵️ 机构意图分类器 (防反向预警)")
             if intent == "信息优势局 (机构确知)":
                 st.success(warning)
-            elif intent == "量子纠缠态 (机构通杀局)":
-                st.error(warning)  # 通杀局用最高级别的红色警报
+            elif intent in ["量子纠缠态 (机构通杀局)", "量子纠缠态 (机构温和通杀)", "虚假大热局 (低赔诱导)"]:
+                st.error(warning)
             else:
-                # 🚀 修复：如果是未知，补充一句兜底提示，避免出现空白框
                 if not warning:
                     warning = "⚠️ 盘口未命中极端通杀或诱导剧本，属常规物理博弈。请重点参考第一维主流动量(黄金共振/主流流入)与第二维极高潜EV选项进行决策。"
                 st.warning(warning)
@@ -993,7 +998,7 @@ elif active_module == "🔥 模块X：全息综合引擎 (M1+M3+M4)":
                 if cond3:
                     return "🩸 【主队全面崩塌】标胜、标平同步遭到抛售，资金全数涌入客队不败（标负/让负）。基本面大概率发生未公开的巨变，直接去下盘！"
  
-                # 🚀 新增剧本4：平局/客胜双轨异动 (精准打击标平涨，让平没动，让负涨)
+                # 剧本4：平局/客胜双轨异动
                 cond4 = (d_d > 0.015 and d_ld < 0.005 and d_ll > 0.01)
                 if cond4:
                     return "🎯 【平局/客不败双轨异动】标盘平局概率暴增，但让球盘让平未跟随，且让负大幅流入！资金在标盘防平，在让球盘防客队不败。主队赢球概率被双向看衰，防冷平或客胜！"
