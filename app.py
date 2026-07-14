@@ -858,27 +858,34 @@ elif active_module == "🔥 模块X：全息综合引擎 (M1+M3+M4)":
             st.markdown("---")
             st.markdown(f"## ⚔️ 第一维：{wl}欧亚基础底座透视")
             
+            # 🚀 终极修复1：直接用泊松底座为所有6项生成底座概率，彻底解决缺失和双杀失效！
+            xg_h_m3, xg_a_m3 = (mx_tg - mx_hcp_math) / 2, (mx_tg + mx_hcp_math) / 2
+            if xg_h_m3 < 0 or xg_a_m3 < 0:
+                st.error("⚠️ 预期进球为负，请检查 M3 底座参数设置！")
+                return
+            
+            _, _, _, _, _, P_col_rounded = dixon_coles_full_matrix(xg_h_m3, xg_a_m3, mx_rho)
+            tc_let_m3 = int(mx_k)
+            p_std_w = sum(P_col_rounded[i, j] for i in range(8) for j in range(8) if i - j > 0)
+            p_std_d = sum(P_col_rounded[i, j] for i in range(8) for j in range(8) if i - j == 0)
+            p_std_l = sum(P_col_rounded[i, j] for i in range(8) for j in range(8) if i - j < 0)
+            p_let_w = sum(P_col_rounded[i, j] for i in range(8) for j in range(8) if i - j > -tc_let_m3)
+            p_let_d = sum(P_col_rounded[i, j] for i in range(8) for j in range(8) if i - j == -tc_let_m3)
+            p_let_l = sum(P_col_rounded[i, j] for i in range(8) for j in range(8) if i - j < -tc_let_m3)
+            
+            s_theo = np.round([p_std_w, p_std_d, p_std_l, p_let_w, p_let_d, p_let_l], 4)
+            u_theo = s_theo.copy() # 底座理论概率不随初终盘变，用作绝对锚点
+ 
             ret_rate_c_std = np.nansum(1.0 / c_odds[0:3])
             ret_rate_d_std = np.nansum(1.0 / d_odds[0:3])
             
-            # 🚀 核心修复1：降低动态阈值乘数，防止屏蔽真实异动
             vol = np.nanstd(delta)
-            dyn_z3 = min(max(round(vol * 0.8, 4), 0.0040), 0.0150)  # 上限锁死15%，下限保底0.4%，乘数降为0.8
-            dyn_z4 = min(max(round(vol * 1.2, 4), 0.0060), 0.0200)  # 上限锁死20%，下限保底0.6%，乘数降为1.2
+            dyn_z3 = min(max(round(vol * 0.8, 4), 0.0040), 0.0150)
+            dyn_z4 = min(max(round(vol * 1.2, 4), 0.0060), 0.0200)
             st.info(f"📊 本场动态自适应阈值：显著流込阈值 Z3={dyn_z3:.4f} | 核心结构阈值 Z4={dyn_z4:.4f}")
  
-            s_theo, u_theo = np.full(6, np.nan), np.full(6, np.nan)
             t_open, v_open, w_traj, aa_hedge = ["⚪ 无对照"]*6, ["⚪ 无对照"]*6, ["⚪ 无对照"]*6, ["⚪ 动量未达标"]*6
             
-            h_val = mx_hcp_bookie
-            if h_val < 0 and abs(mx_k + 1.0) < 0.01: 
-                s_theo[0], u_theo[0] = prob_c[3] + prob_c[4], prob_d[3] + prob_d[4]
-                s_theo[2], u_theo[2] = prob_c[5], prob_d[5]
-            elif h_val > 0 and abs(mx_k - 1.0) < 0.01: 
-                s_theo[2], u_theo[2] = prob_c[4] + prob_c[5], prob_d[4] + prob_d[5]
-                s_theo[0], u_theo[0] = prob_c[3], prob_d[3]
- 
-            s_theo, u_theo = np.round(s_theo, 4), np.round(u_theo, 4)
             max_delta_val = np.nanmax(delta) if not pd.isna(delta).all() else 0
             min_delta_val = np.nanmin(delta) if not pd.isna(delta).all() else 0
             
@@ -936,10 +943,8 @@ elif active_module == "🔥 模块X：全息综合引擎 (M1+M3+M4)":
                 st.warning(warning)
             st.info(f"诊断结论：**{intent}** | 返还率变动: {margin_shift*100:+.2f}% | 跨盘最大残差: {max_residual:.4f}")
  
-            # 🚀 核心修复2：增强6项联合诊断，针对截图中的“标平涨、让平跌”等典型剧本做专项破译
+            # 🚀 终极修复2：重写6项联合诊断，精准打击截图中的异动特征
             def cross_six_diagnosis(d_w, d_d, d_l, d_lw, d_ld, d_ll, K):
-                verdict = "⚪ 常规物理博弈，6项流速基本同步。"
-                
                 # 剧本1：一球小胜铁幕
                 cond1 = (d_w < -0.01 and d_lw < -0.01 and abs(d_ld) < 0.003 and 
                          d_d > 0.01 and d_ll > 0.01 and abs(d_l) < 0.003)
@@ -956,16 +961,21 @@ elif active_module == "🔥 模块X：全息综合引擎 (M1+M3+M4)":
                 if cond3:
                     return "🩸 【主队全面崩塌】标胜、标平同步遭到抛售，资金全数涌入客队不败（标负/让负）。基本面大概率发生未公开的巨变，直接去下盘！"
  
-                # 🚀 新增剧本4：平局大热，让球盘反向撤离 (精准打击你截图中的数据特征)
-                cond4 = (d_d > 0.015 and d_ld < -0.01)
+                # 🚀 新增剧本4：平局/客胜双轨异动 (精准打击截图中的特征：标平涨，让平没动，让负涨)
+                cond4 = (d_d > 0.015 and d_ld < 0.005 and d_ll > 0.01)
                 if cond4:
-                    return "🎯 【平局真实大热 / 赢球输盘预警】标盘平局概率暴增，但让球盘的让平却在大幅流出！这说明机构极度畏惧直接打出平局（标平），但在让球盘上却不怕赢一球。此剧本下，如果是主让球，防主队刚好赢1球（让平打出）或直接冷平！"
+                    return "🎯 【平局/客不败双轨异动】标盘平局概率暴增，但让球盘让平未跟随，且让负大幅流入！资金在标盘防平，在让球盘防客队不败。主队赢球概率被双向看衰，防冷平或客胜！"
                 
                 # 剧本5：跨盘守恒撕裂
                 if abs(res_std_w) > 0.015 or abs(res_let_l) > 0.015:
-                    return "🛡️ 【跨盘守恒律撕裂】6项概率的物理等式发生严重偏移（暗流残差突破1.5%）。机构在跨盘进行非对称对冲，存在强烈的内幕交易对冲行为，建议结合M3底座寻找价值盲区。"
+                    return "🛡️ 【跨盘守恒律撕裂】6项概率的物理等式发生严重偏移。机构在跨盘进行非对称对冲，存在强烈的内幕交易对冲行为，建议结合M3底座寻找价值盲区。"
+ 
+                # 兜底剧本：单点异动预警
+                max_abs_delta = max(abs(d_w), abs(d_d), abs(d_l), abs(d_lw), abs(d_ld), abs(d_ll))
+                if max_abs_delta > 0.015:
+                    return "⚠️ 【单点异动未形成连环剧本】检测到某选项流速突破1.5%，但未形成经典连环套路。请重点关注该选项的'时空双杀'与'底座残差'。"
                 
-                return verdict
+                return "⚪ 常规物理博弈，6项流速基本同步。"
  
             st.markdown("#### 🧬 6项联合交叉诊断 (终极剧本破译)")
             if intent == "信息优势局 (机构确知)":
@@ -976,10 +986,9 @@ elif active_module == "🔥 模块X：全息综合引擎 (M1+M3+M4)":
  
             st.markdown("---")
             st.markdown("## 🎫 第二维：DC双泊松高阶价值提纯")
-            xg_h_m3, xg_a_m3 = (mx_tg - mx_hcp_math) / 2, (mx_tg + mx_hcp_math) / 2
             if xg_h_m3 < 0 or xg_a_m3 < 0: st.error("⚠️ 预期进球为负，请检查设置！")
             else:
-                df_m, ph2, ph1, pdr, pau, P_col_rounded = dixon_coles_full_matrix(xg_h_m3, xg_a_m3, mx_rho)
+                df_m, ph2, ph1, pdr, pau, _ = dixon_coles_full_matrix(xg_h_m3, xg_a_m3, mx_rho)
                 tab_m3_1, tab_m3_2 = st.tabs(["🧮 DC 进球矩阵", "✂️ 体彩 EV 切片器"])
                 with tab_m3_1:
                     rc1, rc2, rc3, rc4 = st.columns(4)
@@ -988,14 +997,6 @@ elif active_module == "🔥 模块X：全息综合引擎 (M1+M3+M4)":
                     st.dataframe(df_m.style.format("{:.4f}"), use_container_width=True)
  
                 with tab_m3_2:
-                    tc_let_m3 = int(mx_k)
-                    p_std_w = sum(P_col_rounded[i, j] for i in range(8) for j in range(8) if i - j > 0)
-                    p_std_d = sum(P_col_rounded[i, j] for i in range(8) for j in range(8) if i - j == 0)
-                    p_std_l = sum(P_col_rounded[i, j] for i in range(8) for j in range(8) if i - j < 0)
-                    p_let_w = sum(P_col_rounded[i, j] for i in range(8) for j in range(8) if i - j > -tc_let_m3)
-                    p_let_d = sum(P_col_rounded[i, j] for i in range(8) for j in range(8) if i - j == -tc_let_m3)
-                    p_let_l = sum(P_col_rounded[i, j] for i in range(8) for j in range(8) if i - j < -tc_let_m3)
-                    
                     intl_prob = np.array([p_std_w, p_std_d, p_std_l, p_let_w, p_let_d, p_let_l])
                     ev_vals = np.round(d_odds * intl_prob - 1, 4)
                     judge_m3 = np.where(pd.isna(ev_vals), "➖", np.where(ev_vals > 0, "🌟 绝对正价值", np.where(ev_vals >= -0.03, "🟢 极度高潜", np.where(ev_vals >= -0.08, "🟡 合理磨损", np.where(ev_vals >= -0.12, "📉 劣势赔付", np.where(ev_vals >= -0.16, "🚨 杀猪盘预警", "🩸 抽水深渊"))))))
