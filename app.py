@@ -916,12 +916,13 @@ elif active_module == "🔥 模块X：全息综合引擎 (M1+M3+M4)":
             st.dataframe(out_main.fillna(""), hide_index=True, use_container_width=True)
  
             # ================= 机构意图分类器 =================
-            res_std_w = prob_d[0] - (prob_d[3] + prob_d[4]) if abs(mx_k + 1.0) < 0.01 else 0
+  res_std_w = prob_d[0] - (prob_d[3] + prob_d[4]) if abs(mx_k + 1.0) < 0.01 else 0
             res_let_l = prob_d[5] - (prob_d[1] + prob_d[2]) if abs(mx_k + 1.0) < 0.01 else 0
             max_residual = max(abs(res_std_w), abs(res_let_l))
             
             margin_shift = ret_rate_d_std - ret_rate_c_std
             positive_flows = np.sum(delta > 0.005)
+            
             # 找到大幅升水（资金流出最多）的选项名称
             max_raise_val = np.max(-delta)
             idx_raise = int(np.argmin(delta))
@@ -932,15 +933,30 @@ elif active_module == "🔥 模块X：全息综合引擎 (M1+M3+M4)":
             opt_drop_name = opts_m1[idx_drop]
             
             intent, warning = "未知", ""
-            if margin_shift < -0.0200:
+            
+            # 🚨 新增最高优先级：绝对信息优势通杀局 (量子纠缠态)
+            # 特征：某选项极限升水(动量<-0.04) + 机构不缩表反升返还(>0) + 跨盘残差极小(<0.005)
+            # 此时机构不惧怕任何赔付，不是在诱导，而是在捂盖子防聪明钱！
+            is_extreme_raise = max_raise_val > 0.04
+            is_perfect_hedge = max_residual < 0.005
+            is_margin_not_shrinking = margin_shift >= 0
+            
+            if is_extreme_raise and is_perfect_hedge and is_margin_not_shrinking:
+                intent = "量子纠缠态 (机构通杀局)"
+                warning = f"🚨 **【极危警告：放弃常规逻辑】**\n\n【{opt_raise_name}】出现极限升水(动量 {delta[idx_raise]:+.4f})，但跨盘守恒残差仅为 {max_residual:.4f}，且机构返还率不降反升(+{margin_shift*100:.2f}%)！\n\n这不再是常规的资金诱导或防范。机构百分百确知结果，正在利用完美数学模型将散户资金系统性锁死在错误选项。此时买谁都是赌博，**强烈建议直接放弃本场比赛，或极小注博弈高赔冷门！**"
+            
+            elif margin_shift < -0.0200:
                 intent = "资金平衡局 (机构不确定)"
                 warning = f"⚠️ 机构临场大幅缩表降抽水！说明机构对结果无绝对把握，正在通过提高抽水率来对冲散户资金。此时指数变动充满欺骗性，原'降水防范'逻辑可能反向失效！"
+            
             elif max_residual > 0.0200 and positive_flows >= 3:
                 intent = "资金失衡局 (散户倒逼)"
                 warning = f"⚠️ 跨盘口守恒律被撕裂，且多选项同步降水！这是散户单边狂热倒逼机构被动调盘。机构并未主动设防，此时'大热必死'概率极高。"
+            
             elif positive_flows <= 2 and max_raise_val > 0.015 and max_residual < 0.0100:
                 intent = "信息优势局 (机构确知)"
                 warning = f"💎 机构控盘精准，针对【{opt_drop_name}】进行极限降水，且跨盘口残差极小。这是机构掌握了内幕信息的主动设防，原模型定性逻辑置信度最高！"
+            
             elif max_raise_val > 0.025 and margin_shift > 0:
                 intent = "被动诱导局 (高赔悬赏)"
                 warning = f"🚨 【{opt_raise_name}】大幅升水且返还率上升！机构在用高赔率悬赏吸引资金去该选项平衡账面，【{opt_raise_name}】大概率打不出，坚决规避！"
@@ -949,6 +965,8 @@ elif active_module == "🔥 模块X：全息综合引擎 (M1+M3+M4)":
             st.markdown("#### 🕵️ 机构意图分类器 (防反向预警)")
             if intent == "信息优势局 (机构确知)":
                 st.success(warning)
+            elif intent == "量子纠缠态 (机构通杀局)":
+                st.error(warning)  # 通杀局用最高级别的红色警报
             else:
                 st.warning(warning)
             st.info(f"诊断结论：**{intent}** | 返还率变动: {margin_shift*100:+.2f}% | 跨盘最大残差: {max_residual:.4f}")
