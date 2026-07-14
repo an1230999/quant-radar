@@ -858,7 +858,7 @@ elif active_module == "🔥 模块X：全息综合引擎 (M1+M3+M4)":
             st.markdown("---")
             st.markdown(f"## ⚔️ 第一维：{wl}欧亚基础底座透视")
             
-            # 🚀 终极修复1：直接用泊松底座为所有6项生成底座概率，彻底解决缺失和双杀失效！
+  # 🚀 终极修复1：直接用泊松底座为所有6项生成底座概率，彻底解决缺失和双杀失效！
             xg_h_m3, xg_a_m3 = (mx_tg - mx_hcp_math) / 2, (mx_tg + mx_hcp_math) / 2
             if xg_h_m3 < 0 or xg_a_m3 < 0:
                 st.error("⚠️ 预期进球为负，请检查 M3 底座参数设置！")
@@ -894,6 +894,7 @@ elif active_module == "🔥 模块X：全息综合引擎 (M1+M3+M4)":
                 if not pd.isna(s_t) and not pd.isna(u_t) and not pd.isna(c_prob):
                     diff_c, diff_d = c_prob - s_t, d_prob - u_t
                     t_open[i] = "🔻 极限低开" if diff_c >= z2 else "📉 显著低开" if diff_c >= z3 else "🔺 极限高开" if diff_c <= -z2 else "📈 显著高开" if diff_c <= -z3 else "⚪ 体系平衡"
+                    # 🚀 修复：新增终盘定性展示
                     v_open[i] = "🔻 极限低开" if diff_d >= z2 else "📉 显著低开" if diff_d >= z3 else "🔺 极限高开" if diff_d <= -z2 else "📈 显著高开" if diff_d <= -z3 else "⚪ 体系平衡"
                     traj = diff_d - diff_c
                     w_traj[i] = "🚨 剧烈砸盘" if traj >= 0.02 else "📉 步步紧逼" if traj >= 0.01 else "🚨 疯狂拉高" if traj <= -0.02 else "📈 门槛放宽" if traj <= -0.01 else "⚪ 伪装平稳"
@@ -910,30 +911,38 @@ elif active_module == "🔥 模块X：全息综合引擎 (M1+M3+M4)":
                         elif struct <= -dyn_z3: aa_hedge[i] = "🕸️ 静态诱网"
                         else: aa_hedge[i] = "⚪ 动量未达标"
  
-            out_main = pd.DataFrame({"选项": opts_m1, "初纯净概率": prob_c, "临纯净概率": prob_d, "动量": delta, "底座概率": s_theo, "初盘定性": t_open, "轨迹研判": w_traj, "时空双杀(改良版)": aa_hedge})
+            # 🚀 修复：在 DataFrame 中加入终盘定性列
+            out_main = pd.DataFrame({"选项": opts_m1, "初纯净概率": prob_c, "临纯净概率": prob_d, "动量": delta, "底座概率": s_theo, "初盘定性": t_open, "终盘定性": v_open, "轨迹研判": w_traj, "时空双杀(改良版)": aa_hedge})
             st.dataframe(out_main.fillna(""), hide_index=True, use_container_width=True)
  
-            res_std_w = prob_d[0] - (prob_d[3] + prob_d[4]) if abs(mx_k + 1.0) < 0.01 else 0
+ res_std_w = prob_d[0] - (prob_d[3] + prob_d[4]) if abs(mx_k + 1.0) < 0.01 else 0
             res_let_l = prob_d[5] - (prob_d[1] + prob_d[2]) if abs(mx_k + 1.0) < 0.01 else 0
             max_residual = max(abs(res_std_w), abs(res_let_l))
             
             margin_shift = ret_rate_d_std - ret_rate_c_std
             positive_flows = np.sum(delta > 0.005)
-            max_raise = np.max(-delta)
+            # 找到大幅升水（资金流出最多）的选项名称
+            max_raise_val = np.max(-delta)
+            idx_raise = int(np.argmin(delta))
+            opt_raise_name = opts_m1[idx_raise]
+            # 找到大幅降水（资金流入最多）的选项名称
+            max_drop_val = np.max(delta)
+            idx_drop = int(np.argmax(delta))
+            opt_drop_name = opts_m1[idx_drop]
             
             intent, warning = "未知", ""
             if margin_shift < -0.0200:
                 intent = "资金平衡局 (机构不确定)"
-                warning = "⚠️ 机构临场大幅缩表降抽水！说明机构对结果无绝对把握，正在通过提高抽水率来对冲散户资金。此时指数变动充满欺骗性，原'降水防范'逻辑可能反向失效！"
+                warning = f"⚠️ 机构临场大幅缩表降抽水！说明机构对结果无绝对把握，正在通过提高抽水率来对冲散户资金。此时指数变动充满欺骗性，原'降水防范'逻辑可能反向失效！"
             elif max_residual > 0.0200 and positive_flows >= 3:
                 intent = "资金失衡局 (散户倒逼)"
-                warning = "⚠️ 跨盘口守恒律被撕裂，且多选项同步降水！这是散户单边狂热倒逼机构被动调盘。机构并未主动设防，此时'大热必死'概率极高。"
-            elif positive_flows <= 2 and max_raise > 0.015 and max_residual < 0.0100:
+                warning = f"⚠️ 跨盘口守恒律被撕裂，且多选项同步降水！这是散户单边狂热倒逼机构被动调盘。机构并未主动设防，此时'大热必死'概率极高。"
+            elif positive_flows <= 2 and max_raise_val > 0.015 and max_residual < 0.0100:
                 intent = "信息优势局 (机构确知)"
-                warning = "💎 机构控盘精准，针对单点极限降水，且跨盘口残差极小。这是机构掌握了内幕信息的主动设防，原模型定性逻辑置信度最高！"
-            elif max_raise > 0.025 and margin_shift > 0:
+                warning = f"💎 机构控盘精准，针对【{opt_drop_name}】进行极限降水，且跨盘口残差极小。这是机构掌握了内幕信息的主动设防，原模型定性逻辑置信度最高！"
+            elif max_raise_val > 0.025 and margin_shift > 0:
                 intent = "被动诱导局 (高赔悬赏)"
-                warning = "🚨 某选项大幅升水且返还率上升！机构在用高赔率悬赏吸引资金平衡账面，该选项大概率打不出。"
+                warning = f"🚨 【{opt_raise_name}】大幅升水且返还率上升！机构在用高赔率悬赏吸引资金去该选项平衡账面，【{opt_raise_name}】大概率打不出，坚决规避！"
             
             st.markdown("---")
             st.markdown("#### 🕵️ 机构意图分类器 (防反向预警)")
