@@ -819,7 +819,7 @@ elif active_module == "🎯 模块七：全息连通器·深盘猎杀终端 (V30
             st.error("🚨 模块七微创运行异常。")
             st.code(traceback.format_exc())
  
-# ==============================================================================
+	# ==============================================================================
 # ===================== 🔥 模块X：全息综合引擎 (M1+M3+M4) =====================
 # ==============================================================================
 elif active_module == "🔥 模块X：全息综合引擎 (M1+M3+M4)":
@@ -915,8 +915,8 @@ elif active_module == "🔥 模块X：全息综合引擎 (M1+M3+M4)":
             out_main = pd.DataFrame({"选项": opts_m1, "初纯净概率": prob_c, "临纯净概率": prob_d, "动量": delta, "底座概率": s_theo, "初盘定性": t_open, "终盘定性": v_open, "轨迹研判": w_traj, "时空双杀(改良版)": aa_hedge})
             st.dataframe(out_main.fillna(""), hide_index=True, use_container_width=True)
  
-            # ================= 机构意图分类器 =================
-  res_std_w = prob_d[0] - (prob_d[3] + prob_d[4]) if abs(mx_k + 1.0) < 0.01 else 0
+            # ================= 升级版：机构意图分类器 (防反向预警) =================
+            res_std_w = prob_d[0] - (prob_d[3] + prob_d[4]) if abs(mx_k + 1.0) < 0.01 else 0
             res_let_l = prob_d[5] - (prob_d[1] + prob_d[2]) if abs(mx_k + 1.0) < 0.01 else 0
             max_residual = max(abs(res_std_w), abs(res_let_l))
             
