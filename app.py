@@ -969,6 +969,9 @@ elif active_module == "🔥 模块X：全息综合引擎 (M1+M3+M4)":
             elif intent == "量子纠缠态 (机构通杀局)":
                 st.error(warning)  # 通杀局用最高级别的红色警报
             else:
+                # 🚀 修复：如果是未知，补充一句兜底提示，避免出现空白框
+                if not warning:
+                    warning = "⚠️ 盘口未命中极端通杀或诱导剧本，属常规物理博弈。请重点参考第一维主流动量(黄金共振/主流流入)与第二维极高潜EV选项进行决策。"
                 st.warning(warning)
             st.info(f"诊断结论：**{intent}** | 返还率变动: {margin_shift*100:+.2f}% | 跨盘最大残差: {max_residual:.4f}")
  
